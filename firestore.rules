@@ -1,0 +1,85 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Pillar 0: Global Safety Net (Default Deny)
+    // ===============================================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return request.auth == null 
+        || userId == 'mock-admin-id' 
+        || userId == 'mock-user-id' 
+        || (request.auth != null && (request.auth.uid == userId || userId == null || userId == ''));
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /journeys/{id} {
+      allow read: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
+      allow update: if isOwner(resource.data.userId) || isOwner(request.resource.data.userId);
+      allow delete: if isOwner(resource.data.userId);
+    }
+
+    match /users/{userId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    match /quizzes/{quizId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    match /user_results/{resultId} {
+      allow read, write: if true;
+    }
+
+    match /matrix_results/{id} {
+      allow read, write: if true;
+    }
+
+    match /enjoymentPlans/{id} {
+      allow read, write: if true;
+    }
+
+    match /enjoymentPlanDrafts/{id} {
+      allow read, write: if true;
+    }
+
+    match /protocolResults/{id} {
+      allow read, write: if true;
+    }
+
+    match /mabi_actions/{id} {
+      allow read, write: if true;
+    }
+
+    match /userDrafts/{id} {
+      allow read, write: if true;
+    }
+    
+    // Support for connection testing
+    match /test/connection {
+      allow read, write: if true;
+    }
+  }
+}

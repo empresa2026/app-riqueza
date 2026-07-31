@@ -1,0 +1,183 @@
+{
+  "entities": {
+    "Category": {
+      "title": "Category",
+      "description": "A category for protocols (e.g., Bloqueio Timidez).",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "createdAt"]
+    },
+    "Quiz": {
+      "title": "Protocol",
+      "description": "A self-inquiry protocol.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "categoryId": { "type": "string" },
+        "identifiedStructure": { "type": "object" },
+        "axisEstablishment": { "type": "object" },
+        "sections": { "type": "array" },
+        "finalPrayer": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "createdBy": { "type": "string" }
+      },
+      "required": ["title", "identifiedStructure", "axisEstablishment", "sections", "finalPrayer", "createdAt", "createdBy"]
+    },
+    "UserResult": {
+      "title": "User Result",
+      "description": "A user's answers to a protocol.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "quizId": { "type": "string" },
+        "journeyId": { "type": "string" },
+        "answers": { "type": "object" },
+        "completedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "quizId", "answers", "completedAt"]
+    },
+    "User": {
+      "title": "User",
+      "description": "User profile and role.",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "user"] },
+        "displayName": { "type": "string" }
+      },
+      "required": ["email", "role"]
+    },
+    "MatrixResult": {
+      "title": "Matrix Result",
+      "description": "A user's answers to an investigation matrix.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "matrixId": { "type": "string" },
+        "journeyId": { "type": "string" },
+        "answers": { "type": "object" },
+        "completedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "matrixId", "answers", "completedAt"]
+    },
+    "EnjoymentPlanResult": {
+      "title": "Enjoyment Plan Result",
+      "description": "A user's enjoyment plan (Raio-X, pillars, vision).",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "journeyId": { "type": "string" },
+        "xray": { "type": "object" },
+        "xrayReflections": { "type": "object" },
+        "pillars": { "type": "object" },
+        "finalVision": { "type": "object" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "xray", "xrayReflections", "pillars", "finalVision", "createdAt"]
+    },
+    "ProtocolResult": {
+      "title": "Protocol Result",
+      "description": "A user's answers to a second-generation protocol.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "protocolId": { "type": "string" },
+        "journeyId": { "type": "string" },
+        "answers": { "type": "object" },
+        "completedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "protocolId", "answers", "completedAt"]
+    },
+    "Journey": {
+      "title": "Journey",
+      "description": "An organized space for protocols (e.g., specific event).",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["active", "archived"] }
+      },
+      "required": ["userId", "name", "createdAt", "status"]
+    },
+    "MabiAction": {
+      "title": "Mabi Action",
+      "description": "Action/intervention plan generated in Phase 3.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "type": { "type": "string" },
+        "title": { "type": "string" },
+        "goal": { "type": "string" },
+        "steps": { "type": "string" },
+        "commitment": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "type", "title", "goal", "steps", "commitment", "createdAt"]
+    },
+    "UserDraft": {
+      "title": "User Draft",
+      "description": "General user draft for auto-saving progress.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "draftKey": { "type": "string" },
+        "data": { "type": "object" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "draftKey", "data", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/journeys/{id}": {
+      "schema": "Journey",
+      "description": "User journeys/spaces for organization."
+    },
+    "/categories/{categoryId}": {
+      "schema": "Category",
+      "description": "Collection of protocol categories."
+    },
+    "/quizzes/{quizId}": {
+      "schema": "Quiz",
+      "description": "Collection of all available protocols."
+    },
+    "/user_results/{resultId}": {
+      "schema": "UserResult",
+      "description": "History of protocol attempts by users."
+    },
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile data."
+    },
+    "/matrix_results/{id}": {
+      "schema": "MatrixResult",
+      "description": "Results of matrix investigations."
+    },
+    "/enjoymentPlans/{id}": {
+      "schema": "EnjoymentPlanResult",
+      "description": "User enjoyment plans."
+    },
+    "/enjoymentPlanDrafts/{id}": {
+      "schema": "EnjoymentPlanResult",
+      "description": "Drafts for enjoyment plans."
+    },
+    "/protocolResults/{id}": {
+      "schema": "ProtocolResult",
+      "description": "Results of second-generation protocols."
+    },
+    "/mabi_actions/{id}": {
+      "schema": "MabiAction",
+      "description": "Tactical intervention action plans saved by users."
+    },
+    "/userDrafts/{id}": {
+      "schema": "UserDraft",
+      "description": "General user drafts for auto-saving progress of forms, quizzes, matrices, and protocols."
+    }
+  }
+}

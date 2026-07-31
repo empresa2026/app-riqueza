@@ -1,0 +1,6 @@
+{
+  "name": "5 ALIANÇAS FAMILIARES",
+  "description": "Plataforma de protocolos de auto-investigação profunda com integração de Webhooks Hotmart e Kiwify.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
