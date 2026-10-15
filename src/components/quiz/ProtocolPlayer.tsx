@@ -3260,9 +3260,117 @@ export function ProtocolPlayer({ userId, journeyId, protocol, targetPerson, view
     });
   };
 
+  // Pessoa do sistema com quem o protocolo trabalha (do Espelho ou da Folha 2)
+  const getSystemPersonName = () => {
+    let name = targetPerson?.name;
+    if (targetPerson?.role === 'mae' && (!name || name === 'Mãe')) name = 'minha mãe';
+    if (targetPerson?.role === 'pai' && (!name || name === 'Pai')) name = 'meu pai';
+    return name || answers.e2_quem_pagou || answers.e2_quem_nao_afasta || answers.e2_quem_excessivo ||
+      answers.e2_quem_fez_sentir || answers.e2_quem_viveu || answers.e2_quem_nao_posso_deixar ||
+      answers.envolved || answers.person_link || answers.resentment_target || 'essa pessoa';
+  };
+
+  // Etapa que separa o perigo real de hoje da memória do sistema (protocolos de culpa)
+  const getPerigoRealStep = () => {
+    const permissao: Record<string, string> = {
+      culpa_sobrevivente: 'me permitisse viver melhor',
+      culpa_separacao: 'me diferenciasse',
+      culpa_responsabilidade: 'soltasse esse peso',
+      culpa_auto_odio: 'parasse de me atacar'
+    };
+    return {
+      title: 'Folha 4.5 — Perigo Real ou Memória?',
+      description: 'Trace uma linha clara entre o presente real e o passado familiar.',
+      fields: [
+        { id: 'pm_perigo_hoje', type: 'textarea', label: `1. O que aconteceria de fato, hoje, se eu ${permissao[protocol.id]}?`, placeholder: 'Só o que é real no presente, não o que parece...' },
+        { id: 'pm_apenas_memoria', type: 'textarea', label: '2. O que é apenas memória do mapa familiar que eu continuo carregando?', placeholder: 'Ex: A memória de que se eu estiver bem alguém vai sofrer...' },
+        { id: 'pm_frase_real', type: 'text', label: '3. Complete: "O que é perigo real hoje é [escreva aqui]..."', placeholder: 'quase nada, hoje eu sei me cuidar...' },
+        { id: 'pm_frase_memoria', type: 'text', label: '"O que é apenas memória é [escreva aqui]..."', placeholder: 'o medo que aprendi na infância...' }
+      ]
+    };
+  };
+
+  // Bloco de Presença Adulta: tira a pessoa do "parece que" e a coloca no adulto de hoje
+  const getPresencaAdultaSteps = () => {
+    const pessoa = getSystemPersonName();
+    return [
+      {
+        title: 'Presença Adulta I — Aqui e Agora',
+        description: 'Saia da cena antiga. Volte ao corpo, ao tempo e aos recursos de quem você é hoje.',
+        fields: [
+          { id: 'pa_corpo_agora', type: 'textarea', label: '1. Sinta os pés no chão e respire devagar. Onde eu estou agora, que dia é hoje e o que meu corpo sente neste momento?', placeholder: 'Estou em casa, é terça-feira, sinto o peito mais solto...' },
+          { id: 'pa_idade_padrao', type: 'text', label: '2. Quando esse padrão me governa, quantos anos eu sinto que tenho?', placeholder: 'Uns 7 anos...' },
+          { id: 'pa_idade_hoje', type: 'text', label: '3. Quantos anos eu tenho hoje?', placeholder: 'Tenho 38 anos...' },
+          { id: 'pa_o_que_mudou', type: 'textarea', label: '4. O que mudou desde aquela idade — no meu corpo, na minha vida e no meu poder de escolha?', placeholder: 'Hoje eu trabalho, decido onde moro, posso ir embora...' },
+          {
+            id: 'pa_recursos',
+            type: 'multiselect',
+            label: '5. Que recursos eu tenho hoje que aquela criança não tinha?',
+            options: [
+              { value: 'proprio_sustento', label: 'Posso me sustentar' },
+              { value: 'escolher_onde_estar', label: 'Posso escolher onde e com quem estar' },
+              { value: 'dizer_nao', label: 'Posso dizer não' },
+              { value: 'pedir_ajuda', label: 'Posso pedir ajuda / tenho rede' },
+              { value: 'sair_do_lugar', label: 'Posso sair de um lugar que me faz mal' },
+              { value: 'cuidar_de_mim', label: 'Sei cuidar de mim' },
+              { value: 'sentir_sem_desmoronar', label: 'Posso sentir sem desmoronar' },
+              { value: 'outra_coisa', label: 'Outra coisa' }
+            ]
+          },
+          { id: 'pa_recursos_desc', type: 'text', label: 'Se selecionou "Outra coisa", descreva:', placeholder: 'Descreva o recurso...' },
+          { id: 'pa_se_pior', type: 'textarea', label: '6. Se o que eu temo acontecesse de verdade, como o adulto que eu sou hoje lidaria com isso?', placeholder: 'Eu ficaria triste, mas eu saberia...' }
+        ]
+      },
+      {
+        title: 'Presença Adulta II — O Adulto Responde',
+        description: 'Agora quem olha, fala e escolhe é o adulto. A criança só é acolhida.',
+        fields: [
+          { id: 'pa_olhar_pessoa', type: 'textarea', label: `1. Olhando como adulto para ${pessoa} — também um adulto que fez escolhas com o que tinha — o que eu vejo agora?`, placeholder: 'Vejo alguém que fez o que pôde...' },
+          { id: 'pa_honrar_sem_carregar', type: 'textarea', label: `2. Como eu posso honrar ${pessoa} sem carregar o que é de ${pessoa}?`, placeholder: 'Vivendo bem o que recebi...' },
+          { id: 'pa_fala_crianca', type: 'textarea', label: '3. O que o adulto que eu sou hoje diz para a criança que carregou isso?', placeholder: 'Você não precisa mais segurar isso. Agora eu cuido...' },
+          { id: 'pa_limite', type: 'textarea', label: '4. A partir de hoje, a que o adulto em mim diz NÃO — e a que diz SIM?', placeholder: 'Não a me exaurir para merecer. Sim ao descanso...' },
+          {
+            id: 'pa_sustentar_culpa',
+            type: 'select',
+            label: '5. Seguir meu caminho pode trazer uma sensação de culpa ou deslealdade. Como adulto, eu me disponho a sentir isso e seguir mesmo assim?',
+            options: [
+              { value: 'sim_sustento', label: 'Sim, eu sustento esse desconforto e sigo' },
+              { value: 'sim_com_apoio', label: 'Sim, mas preciso de apoio para sustentar' },
+              { value: 'ainda_nao', label: 'Ainda não — percebo que a criança ainda decide' }
+            ]
+          },
+          { id: 'pa_frase_adulto', type: 'text', label: '6. Complete: "Eu já não sou aquela criança. Hoje eu posso [escreva aqui]."', placeholder: 'viver bem sem pedir permissão...' },
+          { id: 'pa_escolha', type: 'textarea', label: '7. Agora que eu vejo isso, o que eu escolho — não por medo, nem por lealdade, mas por mim?', placeholder: 'Escolho...' }
+        ]
+      }
+    ];
+  };
+
+  // As palavras do adulto passam a orientar o fechamento do protocolo
+  const applyAdultAnswersToClosing = (steps: any[]) => {
+    const escolha = answers.pa_escolha || (answers.pa_frase_adulto ? `Hoje eu posso ${answers.pa_frase_adulto}` : '');
+    if (!escolha) return steps;
+    return steps.map(stepObj => ({
+      ...stepObj,
+      fields: Array.isArray(stepObj.fields) ? stepObj.fields.map((field: any) =>
+        (field.label?.includes('Hoje, o que me cabe') || ['vida_intencao', 'vida_acao'].includes(field.id))
+          ? { ...field, placeholder: `Seu adulto escolheu: "${escolha}"` }
+          : field
+      ) : stepObj.fields
+    }));
+  };
+
+  const insertPresencaAdulta = (steps: any[]) => {
+    const isCulpaProtocol = ['culpa_sobrevivente', 'culpa_separacao', 'culpa_responsabilidade', 'culpa_auto_odio'].includes(protocol.id);
+    const closingIdx = steps.findIndex(s => s.title?.includes('Frase de Correção') || s.title === 'V.I.D.A.');
+    const insertAt = closingIdx === -1 ? steps.length : closingIdx;
+    const adultSteps = [...(isCulpaProtocol ? [getPerigoRealStep()] : []), ...getPresencaAdultaSteps()];
+    return applyAdultAnswersToClosing([...steps.slice(0, insertAt), ...adultSteps, ...steps.slice(insertAt)]);
+  };
+
   const getModifiedSteps = () => {
     const original = getProtocolSteps();
-    const personalized = applyTargetPersonPersonalization(original, targetPerson);
+    const personalized = insertPresencaAdulta(applyTargetPersonPersonalization(original, targetPerson));
     const isMainProtocol = ['culpa_sobrevivente', 'culpa_separacao', 'culpa_responsabilidade', 'culpa_auto_odio'].includes(protocol.id);
     if (!isMainProtocol) return personalized;
 
@@ -3810,7 +3918,9 @@ export function ProtocolPlayer({ userId, journeyId, protocol, targetPerson, view
                         onClick={() => {
                           if (isViewMode) return;
                           setAnswers(prev => ({ ...prev, audio_frase_tocado: true }));
-                          speakText(getFraseAudioText());
+                          speakText(answers.pa_frase_adulto
+                            ? `${getFraseAudioText()} Eu já não sou aquela criança. Hoje eu posso ${answers.pa_frase_adulto}.`
+                            : getFraseAudioText());
                         }}
                         className={cn(
                           "w-full sm:w-auto px-6 py-3 flex items-center justify-center gap-2 transition-all",
