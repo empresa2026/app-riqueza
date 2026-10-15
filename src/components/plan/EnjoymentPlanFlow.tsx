@@ -40,6 +40,7 @@ import {
 } from '../../data/planConstants';
 export { AREAS, SUBLEIS_SACRIFICIO, SUBLEIS_INJUSTICA, SUBLEIS_DOR, SUBLEIS_RENUNCIA, resolveSubLawTexts };
 import { MabiDiagnosticMatrix, CULPAS_INFO, MEDOS_INFO } from '../journey/MabiDiagnosticMatrix';
+import { PerfilPadroes } from './PerfilPadroes';
 
 interface EnjoymentPlanFlowProps {
   userId: string;
@@ -923,22 +924,26 @@ export function EnjoymentPlanFlow({ userId, journeyId, onComplete, onBack, mode 
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="text-center space-y-6 py-12 max-w-xl mx-auto"
+            className={cn("space-y-6 py-12 mx-auto", mode === 'padroes' ? "max-w-4xl" : "max-w-xl")}
           >
-            <div className="w-16 h-16 bg-gold/10 border-2 border-gold rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
-              <Crown className="w-8 h-8 text-gold" />
+            <div className="text-center space-y-6 max-w-xl mx-auto">
+              <div className="w-16 h-16 bg-gold/10 border-2 border-gold rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
+                <Crown className="w-8 h-8 text-gold" />
+              </div>
+
+              <h2 className="text-3xl font-serif font-medium text-white uppercase tracking-tight">
+                {mode === 'aliancas' && "Alianças Sistêmicas Mapeadas"}
+                {mode === 'padroes' && "Espelho da Realidade Concluído"}
+                {!mode && "Diagnóstico Selado com Sucesso"}
+              </h2>
+              <p className="text-sm text-white/60 leading-relaxed">
+                {mode === 'aliancas' && "O seu histórico de Alianças Invisíveis e débitos herdados foi registrado com sucesso. A consciência destas lealdades é o primeiro passo para a autoria plena. Agora, avance para diagnosticar os padrões somáticos."}
+                {mode === 'padroes' && "Seu diagnóstico de sintomas corporais e subleis ativas foi concluído e salvo. Você expôs com sucesso as amarras do inconsciente. Agora, acesse os protocolos de liberação recomendados."}
+                {!mode && "O seu Mapa de Alianças Familiares foi registrado no seu histórico e conectado ao seu plano biológico. A consciência destas lealdades é o primeiro passo para a autoria plena."}
+              </p>
             </div>
 
-            <h2 className="text-3xl font-serif font-medium text-white uppercase tracking-tight">
-              {mode === 'aliancas' && "Alianças Sistêmicas Mapeadas"}
-              {mode === 'padroes' && "Espelho da Realidade Concluído"}
-              {!mode && "Diagnóstico Selado com Sucesso"}
-            </h2>
-            <p className="text-sm text-white/60 leading-relaxed">
-              {mode === 'aliancas' && "O seu histórico de Alianças Invisíveis e débitos herdados foi registrado com sucesso. A consciência destas lealdades é o primeiro passo para a autoria plena. Agora, avance para diagnosticar os padrões somáticos."}
-              {mode === 'padroes' && "Seu diagnóstico de sintomas corporais e subleis ativas foi concluído e salvo. Você expôs com sucesso as amarras do inconsciente. Agora, acesse os protocolos de liberação recomendados."}
-              {!mode && "O seu Mapa de Alianças Familiares foi registrado no seu histórico e conectado ao seu plano biológico. A consciência destas lealdades é o primeiro passo para a autoria plena."}
-            </p>
+            {mode === 'padroes' && <PerfilPadroes sintomas={sintomas} fase1={fase1} />}
 
             <div className="pt-6 flex flex-col sm:flex-row justify-center gap-3">
               <Button onClick={onComplete} className="bg-gold text-black hover:bg-gold/80 font-bold px-6">
