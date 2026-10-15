@@ -26,6 +26,7 @@ interface HistoryViewProps {
   onDeletePlanResult?: (resultId: string) => void;
   activeJourneyId?: string | null;
   journeys?: Journey[];
+  embutido?: boolean;
 }
 
 const DeleteButton = ({ 
@@ -93,7 +94,8 @@ export function HistoryView({
   onDeleteProtocolResult,
   onDeletePlanResult,
   activeJourneyId,
-  journeys = []
+  journeys = [],
+  embutido = false
 }: HistoryViewProps) {
   const [savingId, setSavingId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -362,8 +364,9 @@ export function HistoryView({
       initial={{ opacity: 0 }} 
       animate={{ opacity: 1 }} 
       exit={{ opacity: 0 }}
-      className="py-8"
+      className={embutido ? "" : "py-8"}
     >
+      {!embutido && (
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
         <div className="flex items-center gap-4">
           <button onClick={onBack} className="text-white/40 hover:text-white transition-colors">
@@ -388,6 +391,7 @@ export function HistoryView({
           </div>
         )}
       </div>
+      )}
 
       <div className="space-y-12 pb-32">
         {/* Enjoyment Plans */}
@@ -445,6 +449,7 @@ export function HistoryView({
           )}
         </section>
 
+        {!embutido && (<>
         {/* IA Results */}
         <section className="space-y-4">
           <h3 className="text-[10px] font-bold uppercase tracking-[0.3em] text-gold/60 ml-2">Protocolos Realizados</h3>
@@ -564,6 +569,7 @@ export function HistoryView({
             </div>
           )}
         </section>
+        </>)}
 
         {/* Protocol Results */}
         <section className="space-y-4">

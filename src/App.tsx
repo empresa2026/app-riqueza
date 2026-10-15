@@ -13,11 +13,10 @@ import {
 } from 'firebase/firestore';
 import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { auth, db } from './firebase';
-import { Journey, Quiz, UserResult, UserProfile, Category, Matrix, MatrixResult, EnjoymentPlanResult, Protocol, ProtocolResult } from './types';
+import { Journey, UserProfile, Category, EnjoymentPlanResult, Protocol, ProtocolResult } from './types';
 import { motion } from 'framer-motion';
 import { Crown, Loader2, User as UserIcon, ShieldCheck, LayoutGrid, ShieldAlert, Compass, Mail, Lock } from 'lucide-react';
 import { handleFirestoreError, OperationType } from './lib/firestore';
-import { summarizeContext } from './services/geminiService';
 import { updateDoc, addDoc } from 'firebase/firestore';
 import { buildMabiAnswersFromPlan } from './lib/mabiEngine';
 
@@ -25,39 +24,33 @@ import { buildMabiAnswersFromPlan } from './lib/mabiEngine';
 import { Button } from './components/ui/Button';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { Header } from './components/layout/Header';
-import { Navbar } from './components/layout/Navbar';
-import { LibraryView } from './components/quiz/LibraryView';
-import { QuizPlayer } from './components/quiz/QuizPlayer';
-import { MatrixLibraryView } from './components/quiz/MatrixLibraryView';
-import { MatrixPlayer } from './components/quiz/MatrixPlayer';
+import { Navbar, AppView } from './components/layout/Navbar';
 import { HistoryView } from './components/quiz/HistoryView';
 import { AdminDashboard } from './components/admin/AdminDashboard';
-import { EnjoymentPlanFlow } from './components/plan/EnjoymentPlanFlow';
-import { ProtocolLibraryView } from './components/quiz/ProtocolLibraryView';
 import { ProtocolPlayer } from './components/quiz/ProtocolPlayer';
-import { MabiTherapeuticChronogram } from './components/journey/MabiTherapeuticChronogram';
-import { MabiAtivacaoView } from './components/journey/MabiAtivacaoView';
-import { MATRICES } from './data/matrices';
-import { PROTOCOLS } from './data/protocols';
+import { DiagnosticoView, EtapaDiagnostico } from './components/diagnostico/DiagnosticoView';
+import { IntervencaoView } from './components/intervencao/IntervencaoView';
+import { SosButton } from './components/intervencao/SosButton';
+import { EvolucaoView } from './components/evolucao/EvolucaoView';
+import { ultimoPlanoComPadroes } from './lib/pessoasDoMapa';
+
+const VIEWS_SALVAS: AppView[] = ['diagnostico', 'intervencao', 'evolucao', 'admin'];
 
 export default function App() {
   const [user, setUser] = useState<{ uid: string } | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [view, setView] = useState<'library' | 'admin' | 'quiz' | 'history' | 'matrices' | 'plan' | 'protocols' | 'journeys' | 'padroes' | 'ativacao' | 'estacoes'>(() => {
-    return (localStorage.getItem('mabi_current_view') as any) || 'plan';
+  // Sem aba salva, a aba inicial é decidida quando o diagnóstico carrega
+  const [view, setView] = useState<AppView | null>(() => {
+    const salva = localStorage.getItem('app_view') as AppView | null;
+    return salva && VIEWS_SALVAS.includes(salva) ? salva : null;
   });
-  const [quizzes, setQuizzes] = useState<Quiz[]>([]);
+  const [etapaDiagnostico, setEtapaDiagnostico] = useState<{ etapa?: EtapaDiagnostico; versao: number }>({ versao: 0 });
   const [categories, setCategories] = useState<Category[]>([]);
   const [journeys, setJourneys] = useState<Journey[]>([]);
   const [activeJourneyId, setActiveJourneyId] = useState<string | null>(localStorage.getItem('active_journey_id'));
-  const [history, setHistory] = useState<UserResult[]>([]);
-  const [matrixHistory, setMatrixHistory] = useState<MatrixResult[]>([]);
   const [protocolHistory, setProtocolHistory] = useState<ProtocolResult[]>([]);
   const [planHistory, setPlanHistory] = useState<EnjoymentPlanResult[]>([]);
-  const [activeQuiz, setActiveQuiz] = useState<Quiz | null>(null);
-  const [activeQuizResult, setActiveQuizResult] = useState<UserResult | null>(null);
-  const [activeMatrix, setActiveMatrix] = useState<Matrix | null>(null);
-  const [activeMatrixResult, setActiveMatrixResult] = useState<MatrixResult | null>(null);
+  const [planHistoryLoaded, setPlanHistoryLoaded] = useState(false);
   const [activeProtocol, setActiveProtocol] = useState<Protocol | null>(null);
   const [activeProtocolResult, setActiveProtocolResult] = useState<ProtocolResult | null>(null);
   const [activeTargetPerson, setActiveTargetPerson] = useState<any>(null);
@@ -87,8 +80,14 @@ export default function App() {
 
   // Update localStorage when view changes
   useEffect(() => {
-    localStorage.setItem('mabi_current_view', view);
+    if (view && VIEWS_SALVAS.includes(view)) localStorage.setItem('app_view', view);
   }, [view]);
+
+  useEffect(() => {
+    if (!view && planHistoryLoaded) {
+      setView(ultimoPlanoComPadroes(planHistory) ? 'intervencao' : 'diagnostico');
+    }
+  }, [view, planHistoryLoaded, planHistory]);
 
   useEffect(() => {
     const testConnection = async () => {
@@ -329,51 +328,6 @@ export default function App() {
 
   useEffect(() => {
     if (!user) return;
-    const q = query(collection(db, 'quizzes'), orderBy('createdAt', 'desc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      setQuizzes(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Quiz)));
-    }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'quizzes');
-    });
-    return unsubscribe;
-  }, [user]);
-
-  useEffect(() => {
-    if (!user) return;
-    const q = query(collection(db, 'user_results'), where('userId', '==', user.uid));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const results = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as UserResult));
-      results.sort((a, b) => {
-        const dateA = a.completedAt ? new Date(a.completedAt).getTime() : 0;
-        const dateB = b.completedAt ? new Date(b.completedAt).getTime() : 0;
-        return dateB - dateA;
-      });
-      setHistory(results);
-    }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'user_results');
-    });
-    return unsubscribe;
-  }, [user]);
-
-  useEffect(() => {
-    if (!user) return;
-    const q = query(collection(db, 'matrix_results'), where('userId', '==', user.uid));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const results = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as MatrixResult));
-      results.sort((a, b) => {
-        const dateA = a.completedAt ? new Date(a.completedAt).getTime() : 0;
-        const dateB = b.completedAt ? new Date(b.completedAt).getTime() : 0;
-        return dateB - dateA;
-      });
-      setMatrixHistory(results);
-    }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'matrix_results');
-    });
-    return unsubscribe;
-  }, [user]);
-
-  useEffect(() => {
-    if (!user) return;
     const q = query(collection(db, 'enjoymentPlans'), where('userId', '==', user.uid));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const results = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as EnjoymentPlanResult));
@@ -383,7 +337,9 @@ export default function App() {
         return dateB - dateA;
       });
       setPlanHistory(results);
+      setPlanHistoryLoaded(true);
     }, (error) => {
+      setPlanHistoryLoaded(true);
       handleFirestoreError(error, OperationType.LIST, 'enjoymentPlans');
     });
     return unsubscribe;
@@ -591,7 +547,21 @@ export default function App() {
     );
   }
 
-  const mabiJourney = journeys?.find(j => j.id === activeJourneyId) || journeys?.find(j => !!j.mabiGoal);
+  const abaInicial: AppView = ultimoPlanoComPadroes(planHistory) ? 'intervencao' : 'diagnostico';
+
+  const iniciarProtocolo = (protocol: Protocol, pessoa?: any) => {
+    setActiveProtocolResult(null);
+    setActiveTargetPerson(pessoa || null);
+    setActiveProtocol(protocol);
+    setView('protocols');
+  };
+
+  const fecharProtocolo = (destino: AppView) => {
+    setActiveProtocol(null);
+    setActiveProtocolResult(null);
+    setActiveTargetPerson(null);
+    setView(destino);
+  };
 
   return (
     <ErrorBoundary>
@@ -600,199 +570,87 @@ export default function App() {
           profile={profile} 
           onLogout={handleLogout} 
           onHome={() => {
-            setView('plan');
-            setActiveQuiz(null);
-            setActiveQuizResult(null);
-            setActiveMatrix(null);
-            setActiveMatrixResult(null);
             setActiveProtocol(null);
+            setActiveProtocolResult(null);
+            setActiveTargetPerson(null);
+            setView(abaInicial);
           }} 
         />
 
         <main className="max-w-7xl mx-auto px-6">
-          {activeQuiz ? (
-            <QuizPlayer 
-              quiz={activeQuiz} 
-              userId={user.uid}
-              journeyId={activeJourneyId || undefined}
-              viewResult={activeQuizResult || undefined}
-              onComplete={() => {
-                setActiveQuiz(null);
-                setActiveQuizResult(null);
-                if (activeJourneyId) {
-                  setView('matrices');
-                } else {
-                  setView('estacoes');
-                }
-              }}
-              onBack={() => {
-                setActiveQuiz(null);
-                setActiveQuizResult(null);
-              }}
-            />
-          ) : activeMatrix ? (
-            <MatrixPlayer 
-              matrix={activeMatrix}
-              userId={user.uid}
-              journeyId={activeJourneyId || undefined}
-              viewResult={activeMatrixResult || undefined}
-              inheritedContext={journeys.find(j => j.id === activeJourneyId)?.context}
-              contextPrompt={(() => {
-                const journey = journeys.find(j => j.id === activeJourneyId);
-                return journey?.steps?.find(s => s.id === activeMatrix.id)?.contextPrompt;
-              })()}
-              onComplete={async (resultText) => {
-                const journeyId = activeJourneyId;
-                const matrixId = activeMatrix.id;
-
-                if (journeyId && resultText) {
-                  const journey = journeys.find(j => j.id === journeyId);
-                  if (journey) {
-                    try {
-                      const newSummary = await summarizeContext(journey.context || '', resultText);
-                      await updateDoc(doc(db, 'journeys', journeyId), {
-                        context: newSummary
-                      });
-                    } catch (err) {
-                      console.error("Error updating journey context:", err);
-                    }
-                  }
-                }
-
-                setActiveMatrix(null);
-                setActiveMatrixResult(null);
-                if (activeJourneyId) {
-                  setView('matrices');
-                } else {
-                  setView('estacoes');
-                }
-              }}
-              onBack={() => {
-                setActiveMatrix(null);
-                setActiveMatrixResult(null);
-              }}
-            />
+          {!view ? (
+            <div className="py-24 flex justify-center">
+              <Loader2 className="w-8 h-8 text-gold animate-spin" />
+            </div>
           ) : (
             <>
-              {view === 'library' && (
-                <LibraryView 
-                  quizzes={quizzes} 
-                  categories={categories}
-                  onSelect={(q) => setActiveQuiz(q)}
-                  history={history}
-                  isAdmin={profile?.role === 'admin'}
-                  activeJourneyId={activeJourneyId}
-                  journeys={journeys}
+              {view === 'diagnostico' && (
+                <DiagnosticoView
+                  key={etapaDiagnostico.versao}
+                  userId={user.uid}
+                  journeyId={activeJourneyId || undefined}
+                  planHistory={planHistory}
+                  etapaInicial={etapaDiagnostico.etapa}
+                  onIrParaIntervencao={() => setView('intervencao')}
                 />
               )}
-              {view === 'matrices' && (
-                <MatrixLibraryView 
-                  onSelect={(m) => setActiveMatrix(m)} 
-                  journeys={journeys}
-                  activeJourneyId={activeJourneyId}
+              {(view === 'intervencao' || (view === 'protocols' && !activeProtocol)) && (
+                <IntervencaoView
                   planHistory={planHistory}
                   protocolHistory={protocolHistory}
-                  onSelectStaticProtocol={(protocolId, targetPerson) => {
-                    const protocol = PROTOCOLS.find(p => p.id === protocolId);
-                    if (protocol) {
-                      setActiveProtocol(protocol);
-                      setActiveTargetPerson(targetPerson || null);
-                      setView('protocols');
-                    } else {
-                      console.log(`Processo ${protocolId} não encontrado.`);
-                    }
-                  }}
-                  onGoToChronogram={() => setView('ativacao')}
+                  onIniciarProtocolo={iniciarProtocolo}
+                  onIrParaDiagnostico={() => setView('diagnostico')}
                 />
               )}
-              {view === 'ativacao' && (
-                <div className="py-8 px-4 max-w-6xl mx-auto space-y-10">
-                  {mabiJourney ? (
-                    <MabiAtivacaoView 
-                      journey={mabiJourney} 
+              {view === 'evolucao' && (
+                <EvolucaoView
+                  planHistory={planHistory}
+                  protocolHistory={protocolHistory}
+                  onReavaliar={() => {
+                    setEtapaDiagnostico(prev => ({ etapa: 'padroes', versao: prev.versao + 1 }));
+                    setView('diagnostico');
+                  }}
+                  onAbrirProtocolo={(p, result) => {
+                    setActiveTargetPerson(null);
+                    setActiveProtocol(p);
+                    setActiveProtocolResult(result);
+                    setView('protocols');
+                  }}
+                  historico={
+                    <HistoryView
+                      embutido
+                      history={[]}
+                      matrixHistory={[]}
+                      quizzes={[]}
                       protocolHistory={protocolHistory}
-                      onSelectStaticProtocol={(protocolId) => {
-                        const protocol = PROTOCOLS.find(p => p.id === protocolId);
-                        if (protocol) {
-                          setActiveProtocol(protocol);
-                          setView('protocols');
-                        } else {
-                          console.log(`Processo ${protocolId} não encontrado.`);
-                        }
+                      planHistory={planHistory}
+                      activeJourneyId={activeJourneyId}
+                      journeys={journeys}
+                      onBack={() => setView('evolucao')}
+                      onSelectQuiz={() => {}}
+                      onViewMatrixResult={() => {}}
+                      onSelectProtocol={(p, result) => {
+                        setActiveTargetPerson(null);
+                        setActiveProtocol(p);
+                        if (result) setActiveProtocolResult(result);
+                        setView('protocols');
                       }}
+                      onDeleteProtocolResult={(id) => deleteResult('protocolResults', id)}
+                      onDeletePlanResult={(id) => deleteResult('enjoymentPlans', id)}
                     />
-                  ) : (
-                    <div className="p-8 text-center bg-white/[0.01] border-white/5 rounded-xl">
-                      <p className="text-white/40 text-sm leading-relaxed max-w-lg mx-auto">
-                        Nenhum diagnóstico ou jornada ativa encontrada. Preencha o mapeamento em <b>Alianças</b> e <b>Padrões</b> primeiro para ver o cronograma clínico de ações.
-                      </p>
-                    </div>
-                  )}
-                </div>
+                  }
+                />
               )}
               {view === 'admin' && profile?.role === 'admin' && (
                 <AdminDashboard 
                   categories={categories}
                   userId={user.uid}
-                  onBack={() => setView('library')}
+                  onBack={() => setView(abaInicial)}
                 />
               )}
-              {view === 'estacoes' && (
-                <HistoryView 
-                  history={history}
-                  matrixHistory={matrixHistory}
-                  protocolHistory={protocolHistory}
-                  planHistory={planHistory}
-                  quizzes={quizzes}
-                  activeJourneyId={activeJourneyId}
-                  journeys={journeys}
-                  onBack={() => setView('plan')}
-                  onSelectQuiz={(q, result) => {
-                    setActiveQuiz(q);
-                    if (result) setActiveQuizResult(result);
-                  }}
-                  onViewMatrixResult={(m, result) => {
-                    setActiveMatrix(m);
-                    setActiveMatrixResult(result);
-                  }}
-                  onSelectProtocol={(p, result) => {
-                    setActiveProtocol(p);
-                    if (result) setActiveProtocolResult(result);
-                    setView('protocols');
-                  }}
-                  onDeleteUserResult={(id) => deleteResult('user_results', id)}
-                  onDeleteMatrixResult={(id) => deleteResult('matrix_results', id)}
-                  onDeleteProtocolResult={(id) => deleteResult('protocolResults', id)}
-                  onDeletePlanResult={(id) => deleteResult('enjoymentPlans', id)}
-                />
-              )}
-              {view === 'plan' && user && (
-                <EnjoymentPlanFlow 
-                  userId={user.uid}
-                  journeyId={activeJourneyId || undefined}
-                  onBack={() => setView('protocols')}
-                  onComplete={() => setView('padroes')}
-                  mode="aliancas"
-                />
-              )}
-              {view === 'padroes' && user && (
-                <EnjoymentPlanFlow 
-                  userId={user.uid}
-                  journeyId={activeJourneyId || undefined}
-                  onBack={() => setView('plan')}
-                  onComplete={() => setView('matrices')}
-                  mode="padroes"
-                />
-              )}
-              {view === 'protocols' && !activeProtocol && (
-                <ProtocolLibraryView 
-                  onSelect={(p) => setActiveProtocol(p)}
-                  journeys={journeys}
-                  activeJourneyId={activeJourneyId}
-                />
-              )}
-              {view === 'protocols' && activeProtocol && user && (
+              {view === 'protocols' && activeProtocol && (
                 <ProtocolPlayer 
+                  key={`${activeProtocol.id}_${activeTargetPerson?.law || ''}_${activeTargetPerson?.name || ''}_${activeProtocolResult?.id || ''}`}
                   userId={user.uid}
                   journeyId={activeJourneyId || undefined}
                   protocol={activeProtocol}
@@ -800,39 +658,30 @@ export default function App() {
                   viewResult={activeProtocolResult || undefined}
                   journeys={journeys}
                   profile={profile}
-                  onBack={() => {
-                    const wasViewing = !!activeProtocolResult;
-                    setActiveProtocol(null);
-                    setActiveProtocolResult(null);
-                    setActiveTargetPerson(null);
-                    if (wasViewing) {
-                      setView('estacoes');
-                    }
-                  }}
-                  onComplete={() => {
-                    const wasViewing = !!activeProtocolResult;
-                    setActiveProtocol(null);
-                    setActiveProtocolResult(null);
-                    setActiveTargetPerson(null);
-                    if (wasViewing) {
-                      setView('estacoes');
-                    } else {
-                      setView('ativacao');
-                    }
-                  }}
+                  onBack={() => fecharProtocolo(activeProtocolResult ? 'evolucao' : 'intervencao')}
+                  onComplete={() => fecharProtocolo('evolucao')}
                 />
               )}
             </>
           )}
         </main>
 
-        {!activeQuiz && !activeMatrix && (
-          <Navbar 
-            view={view} 
-            setView={setView} 
-            isAdmin={profile?.role === 'admin'} 
-          />
+        {view !== 'protocols' && (
+          <SosButton onIniciarProtocolo={(p) => iniciarProtocolo(p)} />
         )}
+
+        <Navbar 
+          view={view || abaInicial} 
+          setView={(v) => {
+            if (view === 'protocols') {
+              setActiveProtocol(null);
+              setActiveProtocolResult(null);
+              setActiveTargetPerson(null);
+            }
+            setView(v);
+          }} 
+          isAdmin={profile?.role === 'admin'} 
+        />
       </div>
     </ErrorBoundary>
   );

@@ -121,6 +121,7 @@ export interface TargetPersonInfo {
   activeGuilt?: string;
   activeFear?: string;
   contractStatement?: string;
+  law?: string;
 }
 
 interface ProtocolPlayerProps {
@@ -137,7 +138,7 @@ interface ProtocolPlayerProps {
 
 export function ProtocolPlayer({ userId, journeyId, protocol, targetPerson, viewResult, onComplete, onBack, journeys, profile }: ProtocolPlayerProps) {
   const [step, setStep] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, any>>(() => {
+  const buildPersonAnswers = (): Record<string, any> => {
     if (targetPerson) {
       const role = (targetPerson.role || '').toLowerCase();
       const name = targetPerson.name || '';
@@ -173,6 +174,7 @@ export function ProtocolPlayer({ userId, journeyId, protocol, targetPerson, view
         targetPersonRole: targetPerson.role,
         targetPersonRoleLabel: targetPerson.roleLabel,
         targetPersonContract: targetPerson.contractStatement,
+        targetPersonLaw: targetPerson.law,
         envolved: possessive,
         person_link: possessive,
         resentment_target: possessive,
@@ -186,7 +188,12 @@ export function ProtocolPlayer({ userId, journeyId, protocol, targetPerson, view
       };
     }
     return {};
-  });
+  };
+  const [answers, setAnswers] = useState<Record<string, any>>(buildPersonAnswers);
+  // Cada pessoa tem o seu próprio rascunho do protocolo
+  const personDraftSuffix = targetPerson
+    ? `_${[targetPerson.law, targetPerson.name].filter(Boolean).join('_').toLowerCase().replace(/[^a-z0-9]+/g, '_')}`
+    : '';
   const [saving, setSaving] = useState(false);
   const [loadingDraft, setLoadingDraft] = useState(true);
   const debounceTimerRef = React.useRef<NodeJS.Timeout | null>(null);
@@ -284,13 +291,13 @@ export function ProtocolPlayer({ userId, journeyId, protocol, targetPerson, view
     }
 
     const loadDraft = async () => {
-      const draftKey = `protocol_draft_${protocol.id}`;
+      const draftKey = `protocol_draft_${protocol.id}${personDraftSuffix}`;
       const docId = `${userId}_${draftKey}`;
       let loadedAnswers = {};
       let loadedStep = 0;
 
       // Try local storage first for speed
-      const saved = localStorage.getItem(`protocol_draft_${protocol.id}_${userId}`);
+      const saved = localStorage.getItem(`${draftKey}_${userId}`);
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
@@ -316,19 +323,19 @@ export function ProtocolPlayer({ userId, journeyId, protocol, targetPerson, view
         console.warn("Failed to load cloud draft:", error);
       }
 
-      setAnswers(loadedAnswers);
+      setAnswers({ ...buildPersonAnswers(), ...loadedAnswers });
       setStep(loadedStep);
       setLoadingDraft(false);
     };
     loadDraft();
-  }, [protocol.id, userId, isViewMode, viewResult]);
+  }, [protocol.id, userId, isViewMode, viewResult, personDraftSuffix]);
 
   // Auto-save to localStorage and Firestore
   React.useEffect(() => {
     if (loadingDraft || isViewMode) return;
 
-    const draftKey = `protocol_draft_${protocol.id}`;
-    const localDraftKey = `protocol_draft_${protocol.id}_${userId}`;
+    const draftKey = `protocol_draft_${protocol.id}${personDraftSuffix}`;
+    const localDraftKey = `${draftKey}_${userId}`;
     
     // Save to localStorage immediately
     localStorage.setItem(localDraftKey, JSON.stringify({ answers, step }));
@@ -361,7 +368,7 @@ export function ProtocolPlayer({ userId, journeyId, protocol, targetPerson, view
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [answers, step, protocol.id, userId, loadingDraft]);
+  }, [answers, step, protocol.id, userId, loadingDraft, personDraftSuffix]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -376,8 +383,8 @@ export function ProtocolPlayer({ userId, journeyId, protocol, targetPerson, view
       await addDoc(collection(db, 'protocolResults'), result);
       
       // Clear draft after successful save
-      const draftKey = `protocol_draft_${protocol.id}`;
-      const localDraftKey = `protocol_draft_${protocol.id}_${userId}`;
+      const draftKey = `protocol_draft_${protocol.id}${personDraftSuffix}`;
+      const localDraftKey = `${draftKey}_${userId}`;
       localStorage.removeItem(localDraftKey);
 
       try {
@@ -3508,7 +3515,7 @@ export function ProtocolPlayer({ userId, journeyId, protocol, targetPerson, view
             Suas percepções foram seladas. Continue sua jornada com esta nova clareza.
           </p>
         </div>
-        <Button onClick={onComplete} className="px-12 py-4">Ir para Ações</Button>
+        <Button onClick={onComplete} className="px-12 py-4">Ver minha evolução</Button>
       </div>
     );
   }

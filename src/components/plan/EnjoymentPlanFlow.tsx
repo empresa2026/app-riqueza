@@ -938,7 +938,7 @@ export function EnjoymentPlanFlow({ userId, journeyId, onComplete, onBack, mode 
               </h2>
               <p className="text-sm text-white/60 leading-relaxed">
                 {mode === 'aliancas' && "O seu histórico de Alianças Invisíveis e débitos herdados foi registrado com sucesso. A consciência destas lealdades é o primeiro passo para a autoria plena. Agora, avance para diagnosticar os padrões somáticos."}
-                {mode === 'padroes' && "Seu diagnóstico de sintomas corporais e subleis ativas foi concluído e salvo. Você expôs com sucesso as amarras do inconsciente. Agora, acesse os protocolos de liberação recomendados."}
+                {mode === 'padroes' && "Seu diagnóstico foi concluído e salvo. Abaixo está o seu perfil dos 4 padrões. Na intervenção, você trabalha cada pessoa da sua história, começando pelo padrão dominante."}
                 {!mode && "O seu Mapa de Alianças Familiares foi registrado no seu histórico e conectado ao seu plano biológico. A consciência destas lealdades é o primeiro passo para a autoria plena."}
               </p>
             </div>
@@ -948,7 +948,7 @@ export function EnjoymentPlanFlow({ userId, journeyId, onComplete, onBack, mode 
             <div className="pt-6 flex flex-col sm:flex-row justify-center gap-3">
               <Button onClick={onComplete} className="bg-gold text-black hover:bg-gold/80 font-bold px-6">
                 {mode === 'aliancas' && "Avançar para Padrões"}
-                {mode === 'padroes' && "Acessar Meus Protocolos"}
+                {mode === 'padroes' && "Começar a intervenção"}
                 {!mode && "Voltar à Jornada"}
               </Button>
               <Button variant="ghost" onClick={handleReset} className="text-white/40 hover:text-white">
