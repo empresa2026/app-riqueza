@@ -535,7 +535,7 @@ export function ProtocolPlayer({ userId, journeyId, protocol, targetPerson, view
           },
           {
             title: 'Folha 3 — Regra Invisível',
-            description: 'Qual é a regra invisível que aprendi? Desvele as leis ocultas de lealdade familiar.',
+            description: 'Qual é a regra invisível que aprendi? Desvele as regras ocultas de lealdade familiar.',
             fields: [
               {
                 id: 'e3_regra_invisivel',
@@ -955,7 +955,7 @@ export function ProtocolPlayer({ userId, journeyId, protocol, targetPerson, view
           },
           {
             title: 'Folha 3 — Regra Invisível',
-            description: 'Qual é a regra invisível que aprendi? Desvele as leis ocultas de lealdade familiar.',
+            description: 'Qual é a regra invisível que aprendi? Desvele as regras ocultas de lealdade familiar.',
             fields: [
               {
                 id: 'e4_regra_invisivel',
@@ -982,7 +982,7 @@ export function ProtocolPlayer({ userId, journeyId, protocol, targetPerson, view
                 id: 'e4_regra_propria_palavra',
                 type: 'textarea',
                 label: '2. Escreva com suas palavras a regra invisível que governa essa culpa:',
-                placeholder: 'Como você explicaria essa lei invisível em sua mente?'
+                placeholder: 'Como você explicaria essa regra invisível em sua mente?'
               },
               {
                 id: 'e4_comportamentos_atuais',
@@ -2464,7 +2464,7 @@ export function ProtocolPlayer({ userId, journeyId, protocol, targetPerson, view
           },
           {
             title: 'Etapa 3 — Qual é a ameaça invisível que eu aprendi?',
-            description: 'Nomeie a lei de sobrevivência oculta em sua mente.',
+            description: 'Nomeie a regra de sobrevivência oculta em sua mente.',
             fields: [
               {
                 id: 'e3_regra',

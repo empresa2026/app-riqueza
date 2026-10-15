@@ -31,7 +31,7 @@ export function contratoDaLei(lei: PadraoId, familiar: string, areas: string[], 
     case 'sacrificio':
       return `Para honrar o sacrifício de ${pessoa}, eu me comprometo a sofrer e me exaurir ${onde}${detalhe}.`;
     case 'injustica':
-      return `Para compensar a injustiça vivida por ${pessoa}, eu me comprometo a abrir mão da prosperidade ${onde}${detalhe}.`;
+      return `Para compensar a perda vivida por ${pessoa}, eu me comprometo a abrir mão da prosperidade ${onde}${detalhe}.`;
     case 'dor':
       return `Para carregar a dor de ${pessoa}, meu corpo e mente repetirão o padrão de sofrimento ${onde}${detalhe}.`;
     case 'renuncia':

@@ -18,7 +18,7 @@ import { SintomasData } from './Fase2Sintomas';
 
 export const MATRIZ_LEIS = {
   sacrificio: {
-    label: "1. A LEI DO SACRIFÍCIO",
+    label: "1. PADRÃO DE SACRIFÍCIO",
     subLabel: "Dívida de Esforço & Exaustão",
     DINHEIRO: "Se eu não estiver exausto, o dinheiro é imoral ou ilegítimo.",
     AMOR: "O amor verdadeiro exige aguentar o insuportável e esquecer de mim.",
@@ -26,7 +26,7 @@ export const MATRIZ_LEIS = {
     CARREIRA: "Trabalhar com leveza é trair a luta e a suada história da minha família."
   },
   injustica: {
-    label: "2. A LEI DA INJUSTIÇA",
+    label: "2. PADRÃO DE PERDA",
     subLabel: "Dívida de Mérito & Julgamento",
     DINHEIRO: "Se eu ganhar mais do que eles, estou sendo injusto com quem sofreu.",
     AMOR: "Relacionamentos leves são suspeitos; o amor tem que ser um acerto de contas.",
@@ -34,7 +34,7 @@ export const MATRIZ_LEIS = {
     CARREIRA: "O sucesso de verdade é perigoso; atrai traição, inveja ou roubo."
   },
   dor: {
-    label: "3. A LEI DA DOR",
+    label: "3. PADRÃO DE DOR",
     subLabel: "Dívida de Luto & Sofrimento",
     DINHEIRO: "A alegria financeira atrai desgraça; é preciso sofrer para compensar.",
     AMOR: "Eu só sei amar na dor, no luto, no resgate ou na separação traumática.",
@@ -42,7 +42,7 @@ export const MATRIZ_LEIS = {
     CARREIRA: "Triunfar sem dor é uma afronta ao luto e às perdas dos meus antepassados."
   },
   renuncia: {
-    label: "4. A LEI DA RENÚNCIA",
+    label: "4. PADRÃO DE RENÚNCIA",
     subLabel: "Dívida de Pertencimento & Invisibilidade",
     DINHEIRO: "Preciso abrir mão da minha riqueza para não me afastar de quem ficou para trás.",
     AMOR: "Eu renuncio ao meu brilho e à minha voz para que o outro não se sinta ofuscado.",
@@ -129,7 +129,7 @@ export const Fase3MatrizPrescricao: React.FC<Fase3Props> = ({
   const getLoyalPeople = () => {
     const list: string[] = [];
     if (fase1.sacrificio.familiar) list.push(`${fase1.sacrificio.familiar} (Sacrifício)`);
-    if (fase1.injustica.familiar) list.push(`${fase1.injustica.familiar} (Injustiça)`);
+    if (fase1.injustica.familiar) list.push(`${fase1.injustica.familiar} (Perda)`);
     if (fase1.dor.familiar) list.push(`${fase1.dor.familiar} (Dor)`);
     if (fase1.renuncia.familiar) list.push(`${fase1.renuncia.familiar} (Renúncia)`);
     return list.length > 0 ? list.join('; ') : "Não especificado";
@@ -143,7 +143,7 @@ export const Fase3MatrizPrescricao: React.FC<Fase3Props> = ({
     }
     if (fase1.injustica.familiar && fase1.injustica.fatos) {
       const areasStr = fase1.injustica.areas.length > 0 ? fase1.injustica.areas.join('/') : 'minha vida';
-      contracts.push(`Para compensar a injustiça vivida por ${fase1.injustica.familiar}, eu me comprometo a abrir mão da prosperidade no(a) ${areasStr} (${fase1.injustica.fatos}).`);
+      contracts.push(`Para compensar a perda vivida por ${fase1.injustica.familiar}, eu me comprometo a abrir mão da prosperidade no(a) ${areasStr} (${fase1.injustica.fatos}).`);
     }
     if (fase1.dor.familiar && fase1.dor.fatos) {
       const areasStr = fase1.dor.areas.length > 0 ? fase1.dor.areas.join('/') : 'minha vida';
@@ -196,7 +196,7 @@ export const Fase3MatrizPrescricao: React.FC<Fase3Props> = ({
             FASE 2: DIAGNÓSTICO ESTRUTURAL
           </span>
           <h2 className="text-2xl font-serif font-medium uppercase mt-1 text-white">
-            A MATRIZ DAS LEIS PRÉ-CONFIGURADAS
+            A MATRIZ DOS PADRÕES
           </h2>
         </div>
         <div className="flex gap-2">

@@ -38,7 +38,7 @@ export const Fase1Contabilidade: React.FC<Fase1ContabilidadeProps> = ({
 
   const titles = {
     f1_sacrificio: "1. SACRIFÍCIO NÃO RECONHECIDO",
-    f1_injustica: "2. INJUSTIÇA NÃO REPARADA",
+    f1_injustica: "2. PERDA NÃO REPARADA",
     f1_dor: "3. DOR NÃO PROCESSADA",
     f1_renuncia: "4. RENÚNCIA / EXCLUÍDO"
   };

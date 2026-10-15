@@ -19,6 +19,7 @@ export interface Padrao {
   id: PadraoId;
   numero: string;
   nome: string;
+  titulo: string;
   sequestra: string;
   gatilho: string;
   emocao: string;
@@ -47,6 +48,7 @@ export const PADROES: Padrao[] = [
     id: 'sacrificio',
     numero: '01',
     nome: 'SACRIFÍCIO',
+    titulo: 'Padrão de Sacrifício',
     sequestra: 'TER MAIS',
     gatilho: 'CULPA',
     emocao: 'Culpa • Ansiedade por agradar • Controle',
@@ -107,7 +109,8 @@ export const PADROES: Padrao[] = [
   {
     id: 'injustica',
     numero: '02',
-    nome: 'PERDA / INJUSTIÇA',
+    nome: 'PERDA',
+    titulo: 'Padrão de Perda',
     sequestra: 'SER GRANDE',
     gatilho: 'PERDA DE ESPAÇO, DIREITO, VOZ',
     emocao: 'Ressentimento • Raiva contida • Indignação',
@@ -169,6 +172,7 @@ export const PADROES: Padrao[] = [
     id: 'dor',
     numero: '03',
     nome: 'DOR',
+    titulo: 'Padrão de Dor',
     sequestra: 'ESTAR BEM',
     gatilho: 'DOR • CAOS • TRAGÉDIA',
     emocao: 'Terror • Vício em estresse • Luto não processado',
@@ -229,6 +233,7 @@ export const PADROES: Padrao[] = [
     id: 'renuncia',
     numero: '04',
     nome: 'RENÚNCIA',
+    titulo: 'Padrão de Renúncia',
     sequestra: 'IR ALÉM',
     gatilho: 'RENÚNCIA • VERGONHA DE BRILHAR',
     emocao: 'Vergonha de se destacar • Medo de exclusão • Invisibilidade',

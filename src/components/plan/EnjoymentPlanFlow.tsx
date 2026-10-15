@@ -77,7 +77,7 @@ const MATRIZ_LEIS = {
     CARREIRA: "Proibição sistêmica de ultrapassar quem sofreu."
   },
   injustica: {
-    label: "2. INJUSTIÇA",
+    label: "2. PERDA",
     subLabel: "A Contabilidade Familiar (Desequilíbrio de Justiça)",
     DINHEIRO: "O dinheiro foge para equilibrar o débito geracional.",
     AMOR: "A paz relacional incomoda; conflito é conexão.",
@@ -763,7 +763,7 @@ export function EnjoymentPlanFlow({ userId, journeyId, onComplete, onBack, mode 
                 <div>
                   <h3 className="font-semibold text-white mb-1">Espelho da Realidade (Fase 2)</h3>
                   <p className="text-xs text-white/50 leading-relaxed">
-                    Marque as subleis corporais invisíveis que você executa hoje como um marcador de lealdade solidária.
+                    Marque os sinais corporais que você repete hoje como um marcador de lealdade solidária.
                   </p>
                 </div>
               </Card>
@@ -838,7 +838,7 @@ export function EnjoymentPlanFlow({ userId, journeyId, onComplete, onBack, mode 
                 O ESPELHO DA REALIDADE
               </h1>
               <p className="text-sm md:text-base text-white/60 max-w-2xl mx-auto leading-relaxed">
-                Aqui expomos as subleis inconscientes, travas de vida e comportamentos que o seu corpo executa no dia a dia para permanecer leal aos acordos familiares.
+                Aqui expomos os sinais inconscientes, travas de vida e comportamentos que o seu corpo executa no dia a dia para permanecer leal aos acordos familiares.
               </p>
             </div>
 
@@ -848,7 +848,7 @@ export function EnjoymentPlanFlow({ userId, journeyId, onComplete, onBack, mode 
                   <Activity className="w-5 h-5 text-gold" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-white mb-1">Mapeamento de Padrões e Subleis</h3>
+                  <h3 className="font-semibold text-white mb-1">Mapeamento de Padrões e Sinais</h3>
                   <p className="text-xs text-white/50 leading-relaxed">
                     Marque os sintomas corporais, sensações somáticas e autossabotagens automáticas que travam sua prosperidade, saúde ou amor no presente.
                   </p>

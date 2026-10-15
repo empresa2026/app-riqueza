@@ -7,8 +7,9 @@ import { Button } from '../ui/Button';
 import { cn } from '../../lib/utils';
 import { PROTOCOLS } from '../../data/protocols';
 import { getPadrao } from '../../data/padroesCorpo';
+import { calcularPerfilPadroes } from '../../lib/perfilPadroes';
 import { PROTOCOLOS_DO_METODO } from '../../data/intervencao';
-import { diasParaReavaliar, montarPessoasDoMapa, PessoaDoMapa } from '../../lib/pessoasDoMapa';
+import { diasParaReavaliar, montarPessoasDoMapa, PessoaDoMapa, ultimoPlanoComAliancas, ultimoPlanoComPadroes } from '../../lib/pessoasDoMapa';
 
 export interface PessoaAlvo {
   name: string;
@@ -23,13 +24,14 @@ interface IntervencaoViewProps {
   protocolHistory: ProtocolResult[];
   onIniciarProtocolo: (protocol: Protocol, pessoa?: PessoaAlvo) => void;
   onIrParaDiagnostico: () => void;
+  onVerPerfil: () => void;
 }
 
 const PAPEL_PADRAO_LABEL: Record<string, string> = {
-  dominante: 'Padrão dominante',
-  secundario: 'Padrão secundário',
-  presente: 'Padrão presente',
-  ausente: 'Padrão pouco ativo'
+  dominante: 'dominante',
+  secundario: 'secundário',
+  presente: 'presente',
+  ausente: 'pouco ativo'
 };
 
 const protocoloPorId = (id: string) => PROTOCOLS.find(p => p.id === id)!;
@@ -37,7 +39,7 @@ const protocoloPorId = (id: string) => PROTOCOLS.find(p => p.id === id)!;
 const pessoaAlvo = (p: PessoaDoMapa): PessoaAlvo => ({
   name: p.nome,
   role: p.papelFamiliar,
-  roleLabel: getPadrao(p.lei).nome,
+  roleLabel: getPadrao(p.lei).titulo,
   contractStatement: p.contrato,
   law: p.lei
 });
@@ -56,7 +58,36 @@ function StatusPessoa({ pessoa }: { pessoa: PessoaDoMapa }) {
   );
 }
 
-export function IntervencaoView({ planHistory, protocolHistory, onIniciarProtocolo, onIrParaDiagnostico }: IntervencaoViewProps) {
+// Faixa com o padrão dominante e os secundários, ligando a intervenção ao diagnóstico
+function FaixaDoPadrao({ planHistory, onVerPerfil }: { planHistory: EnjoymentPlanResult[]; onVerPerfil: () => void }) {
+  const planoPadroes = ultimoPlanoComPadroes(planHistory);
+  if (!planoPadroes) return null;
+  const fase1 = (ultimoPlanoComAliancas(planHistory) || planoPadroes).fase1;
+  const ativos = calcularPerfilPadroes(planoPadroes.sintomas as any, fase1 as any)
+    .filter(p => p.papel === 'dominante' || p.papel === 'secundario');
+  if (ativos.length === 0) return null;
+
+  return (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3 rounded-2xl bg-white/[0.03] border border-white/5">
+      <span className="text-[10px] uppercase tracking-widest font-bold text-white/40">Seu padrão</span>
+      {ativos.map((p, i) => {
+        const padrao = getPadrao(p.id);
+        return (
+          <span key={p.id} className="text-sm">
+            <b style={{ color: padrao.cor }}>{padrao.titulo.replace('Padrão de ', '')}</b>
+            <span className="text-white/40"> ({PAPEL_PADRAO_LABEL[p.papel]})</span>
+            {i < ativos.length - 1 && <span className="text-white/20"> •</span>}
+          </span>
+        );
+      })}
+      <button onClick={onVerPerfil} className="sm:ml-auto text-xs font-bold text-gold hover:underline">
+        Ver perfil completo
+      </button>
+    </div>
+  );
+}
+
+export function IntervencaoView({ planHistory, protocolHistory, onIniciarProtocolo, onIrParaDiagnostico, onVerPerfil }: IntervencaoViewProps) {
   const [mostrarOutros, setMostrarOutros] = useState(false);
   const pessoas = montarPessoasDoMapa(planHistory, protocolHistory);
   const proxima = pessoas.find(p => !p.ultimoProtocolo);
@@ -70,6 +101,8 @@ export function IntervencaoView({ planHistory, protocolHistory, onIniciarProtoco
         </div>
         <p className="text-white/40 text-sm">Cada pessoa da sua história, uma de cada vez — começando pelo seu padrão dominante.</p>
       </div>
+
+      <FaixaDoPadrao planHistory={planHistory} onVerPerfil={onVerPerfil} />
 
       {pessoas.length === 0 ? (
         <Card className="p-8 text-center space-y-4">
@@ -87,7 +120,7 @@ export function IntervencaoView({ planHistory, protocolHistory, onIniciarProtoco
               <div>
                 <h3 className="text-2xl font-serif">{proxima.nome}</h3>
                 <p className="text-sm" style={{ color: getPadrao(proxima.lei).cor }}>
-                  {getPadrao(proxima.lei).nome} • {PAPEL_PADRAO_LABEL[proxima.papelPadrao]}
+                  {getPadrao(proxima.lei).titulo} • {PAPEL_PADRAO_LABEL[proxima.papelPadrao]}
                 </p>
               </div>
               <p className="text-white/60 text-sm italic">“{proxima.contrato}”</p>
@@ -122,7 +155,7 @@ export function IntervencaoView({ planHistory, protocolHistory, onIniciarProtoco
                       <span className="w-1.5 self-stretch rounded-full shrink-0" style={{ backgroundColor: padrao.cor }} />
                       <div>
                         <h4 className="text-xl font-serif">{pessoa.nome}</h4>
-                        <p className="text-xs" style={{ color: padrao.cor }}>{padrao.nome} • {PAPEL_PADRAO_LABEL[pessoa.papelPadrao]}</p>
+                        <p className="text-xs" style={{ color: padrao.cor }}>{padrao.titulo} • {PAPEL_PADRAO_LABEL[pessoa.papelPadrao]}</p>
                       </div>
                     </div>
                     <StatusPessoa pessoa={pessoa} />

@@ -215,7 +215,7 @@ export function HistoryView({
       content += `   Familiar de Lealdade: ${f1.sacrificio?.familiar || 'Não informado'}\n`;
       content += `   Fatos Relevantes: ${f1.sacrificio?.fatos || 'Não informado'}\n\n`;
 
-      content += `2. INJUSTIÇA NÃO REPARADA\n`;
+      content += `2. PERDA NÃO REPARADA\n`;
       content += `   Áreas Afetadas: ${(f1.injustica?.areas || []).join(', ') || 'Nenhuma'}\n`;
       content += `   Familiar de Lealdade: ${f1.injustica?.familiar || 'Não informado'}\n`;
       content += `   Fatos Relevantes: ${f1.injustica?.fatos || 'Não informado'}\n\n`;
@@ -231,7 +231,7 @@ export function HistoryView({
       content += `   Fatos Relevantes: ${f1.renuncia?.fatos || 'Não informado'}\n\n`;
 
       content += `==================================================\n`;
-      content += `FASE 2: DIAGNÓSTICO DE SINTOMAS & SUBLEIS DO ESPELHO DA VIDA\n`;
+      content += `FASE 2: DIAGNÓSTICO DE SINTOMAS & SINAIS DO ESPELHO DA VIDA\n`;
       content += `==================================================\n\n`;
 
       const sints = result.sintomas || { sacrificio: [], injustica: [], dor: [], renuncia: [] };
@@ -241,35 +241,35 @@ export function HistoryView({
       const dorSub = resolveSubLawTexts(sints.dor, SUBLEIS_DOR);
       const renSub = resolveSubLawTexts(sints.renuncia, SUBLEIS_RENUNCIA);
 
-      content += `1. SUBLEIS DE SACRIFÍCIO (${sacSub.length} ativas):\n`;
+      content += `1. SINAIS DE SACRIFÍCIO (${sacSub.length} marcados):\n`;
       if (sacSub.length > 0) {
         sacSub.forEach(txt => content += `   • ${txt}\n`);
       } else {
-        content += `   (Nenhuma sublei selecionada)\n`;
+        content += `   (Nenhum sinal selecionado)\n`;
       }
       content += `\n`;
 
-      content += `2. SUBLEIS DE INJUSTIÇA (${injSub.length} ativas):\n`;
+      content += `2. SINAIS DE PERDA (${injSub.length} marcados):\n`;
       if (injSub.length > 0) {
         injSub.forEach(txt => content += `   • ${txt}\n`);
       } else {
-        content += `   (Nenhuma sublei selecionada)\n`;
+        content += `   (Nenhum sinal selecionado)\n`;
       }
       content += `\n`;
 
-      content += `3. SUBLEIS DE DOR (${dorSub.length} ativas):\n`;
+      content += `3. SINAIS DE DOR (${dorSub.length} marcados):\n`;
       if (dorSub.length > 0) {
         dorSub.forEach(txt => content += `   • ${txt}\n`);
       } else {
-        content += `   (Nenhuma sublei selecionada)\n`;
+        content += `   (Nenhum sinal selecionado)\n`;
       }
       content += `\n`;
 
-      content += `4. SUBLEIS DE RENÚNCIA (${renSub.length} ativas):\n`;
+      content += `4. SINAIS DE RENÚNCIA (${renSub.length} marcados):\n`;
       if (renSub.length > 0) {
         renSub.forEach(txt => content += `   • ${txt}\n`);
       } else {
-        content += `   (Nenhuma sublei selecionada)\n`;
+        content += `   (Nenhum sinal selecionado)\n`;
       }
       content += `\n`;
 
@@ -678,7 +678,7 @@ export function HistoryView({
                 <div className="grid md:grid-cols-2 gap-4">
                   {[
                     { title: '1. SACRIFÍCIO NÃO RECONHECIDO', data: viewingPlan.fase1?.sacrificio },
-                    { title: '2. INJUSTIÇA NÃO REPARADA', data: viewingPlan.fase1?.injustica },
+                    { title: '2. PERDA NÃO REPARADA', data: viewingPlan.fase1?.injustica },
                     { title: '3. DOR NÃO PROCESSADA', data: viewingPlan.fase1?.dor },
                     { title: '4. RENÚNCIA / EXCLUÍDO', data: viewingPlan.fase1?.renuncia }
                   ].map((item, i) => (
@@ -710,15 +710,15 @@ export function HistoryView({
                 </div>
               </div>
 
-              {/* Fase 2: Diagnóstico de Sintomas & Subleis do Espelho da Vida */}
+              {/* Fase 2: Diagnóstico de Sintomas & Sinais do Espelho da Vida */}
               <div className="space-y-4">
                 <h4 className="text-[10px] font-bold uppercase tracking-widest text-gold/60">
-                  Fase 2: Diagnóstico de Sintomas & Subleis do Espelho da Vida
+                  Fase 2: Diagnóstico de Sintomas & Sinais do Espelho da Vida
                 </h4>
                 <div className="grid md:grid-cols-2 gap-4">
                   {[
                     { title: '1. SACRIFÍCIO', items: resolveSubLawTexts(viewingPlan.sintomas?.sacrificio, SUBLEIS_SACRIFICIO) },
-                    { title: '2. INJUSTIÇA', items: resolveSubLawTexts(viewingPlan.sintomas?.injustica, SUBLEIS_INJUSTICA) },
+                    { title: '2. PERDA', items: resolveSubLawTexts(viewingPlan.sintomas?.injustica, SUBLEIS_INJUSTICA) },
                     { title: '3. DOR', items: resolveSubLawTexts(viewingPlan.sintomas?.dor, SUBLEIS_DOR) },
                     { title: '4. RENÚNCIA', items: resolveSubLawTexts(viewingPlan.sintomas?.renuncia, SUBLEIS_RENUNCIA) }
                   ].map((cat, i) => (
@@ -726,7 +726,7 @@ export function HistoryView({
                       <div className="flex items-center justify-between border-b border-white/10 pb-2">
                         <h5 className="font-serif text-gold text-sm font-semibold">{cat.title}</h5>
                         <span className="text-[9px] bg-gold/10 text-gold px-2.5 py-0.5 rounded-full font-bold">
-                          {cat.items.length} subleis ativas
+                          {cat.items.length} sinais marcados
                         </span>
                       </div>
                       {cat.items.length > 0 ? (
@@ -739,7 +739,7 @@ export function HistoryView({
                           ))}
                         </ul>
                       ) : (
-                        <p className="text-xs text-white/30 italic py-1">Nenhuma sublei ativada nesta lei.</p>
+                        <p className="text-xs text-white/30 italic py-1">Nenhum sinal marcado neste padrão.</p>
                       )}
                     </div>
                   ))}
@@ -832,7 +832,7 @@ export function HistoryView({
                     }
                     if (injustica?.familiar && injustica?.fatos) {
                       const areasStr = (injustica.areas || []).length > 0 ? injustica.areas.join('/') : 'minha vida';
-                      contracts.push(`Para compensar a injustiça vivida por ${injustica.familiar}, eu me comprometo a abrir mão da prosperidade no(a) ${areasStr} (${injustica.fatos}).`);
+                      contracts.push(`Para compensar a perda vivida por ${injustica.familiar}, eu me comprometo a abrir mão da prosperidade no(a) ${areasStr} (${injustica.fatos}).`);
                     }
                     if (dor?.familiar && dor?.fatos) {
                       const areasStr = (dor.areas || []).length > 0 ? dor.areas.join('/') : 'minha vida';

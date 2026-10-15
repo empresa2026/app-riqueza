@@ -600,6 +600,10 @@ export default function App() {
                   protocolHistory={protocolHistory}
                   onIniciarProtocolo={iniciarProtocolo}
                   onIrParaDiagnostico={() => setView('diagnostico')}
+                  onVerPerfil={() => {
+                    setEtapaDiagnostico(prev => ({ etapa: 'perfil', versao: prev.versao + 1 }));
+                    setView('diagnostico');
+                  }}
                 />
               )}
               {view === 'evolucao' && (
