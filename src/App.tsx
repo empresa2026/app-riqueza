@@ -60,6 +60,7 @@ export default function App() {
   const [activeMatrixResult, setActiveMatrixResult] = useState<MatrixResult | null>(null);
   const [activeProtocol, setActiveProtocol] = useState<Protocol | null>(null);
   const [activeProtocolResult, setActiveProtocolResult] = useState<ProtocolResult | null>(null);
+  const [activeTargetPerson, setActiveTargetPerson] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   // Email/Password Authentication States
@@ -691,10 +692,11 @@ export default function App() {
                   activeJourneyId={activeJourneyId}
                   planHistory={planHistory}
                   protocolHistory={protocolHistory}
-                  onSelectStaticProtocol={(protocolId) => {
+                  onSelectStaticProtocol={(protocolId, targetPerson) => {
                     const protocol = PROTOCOLS.find(p => p.id === protocolId);
                     if (protocol) {
                       setActiveProtocol(protocol);
+                      setActiveTargetPerson(targetPerson || null);
                       setView('protocols');
                     } else {
                       console.log(`Processo ${protocolId} não encontrado.`);
@@ -794,6 +796,7 @@ export default function App() {
                   userId={user.uid}
                   journeyId={activeJourneyId || undefined}
                   protocol={activeProtocol}
+                  targetPerson={activeTargetPerson}
                   viewResult={activeProtocolResult || undefined}
                   journeys={journeys}
                   profile={profile}
@@ -801,6 +804,7 @@ export default function App() {
                     const wasViewing = !!activeProtocolResult;
                     setActiveProtocol(null);
                     setActiveProtocolResult(null);
+                    setActiveTargetPerson(null);
                     if (wasViewing) {
                       setView('estacoes');
                     }
@@ -809,6 +813,7 @@ export default function App() {
                     const wasViewing = !!activeProtocolResult;
                     setActiveProtocol(null);
                     setActiveProtocolResult(null);
+                    setActiveTargetPerson(null);
                     if (wasViewing) {
                       setView('estacoes');
                     } else {

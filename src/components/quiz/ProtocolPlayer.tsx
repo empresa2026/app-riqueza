@@ -16,7 +16,8 @@ import {
   VolumeX,
   Play,
   Pause,
-  RotateCcw
+  RotateCcw,
+  Zap
 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
@@ -113,10 +114,20 @@ const BODY_PARTS = [
   }
 ];
 
+export interface TargetPersonInfo {
+  name: string;
+  role: string;
+  roleLabel?: string;
+  activeGuilt?: string;
+  activeFear?: string;
+  contractStatement?: string;
+}
+
 interface ProtocolPlayerProps {
   userId: string;
   journeyId?: string;
   protocol: Protocol;
+  targetPerson?: TargetPersonInfo | null;
   viewResult?: ProtocolResult;
   onComplete: () => void;
   onBack: () => void;
@@ -124,9 +135,58 @@ interface ProtocolPlayerProps {
   profile?: any;
 }
 
-export function ProtocolPlayer({ userId, journeyId, protocol, viewResult, onComplete, onBack, journeys, profile }: ProtocolPlayerProps) {
+export function ProtocolPlayer({ userId, journeyId, protocol, targetPerson, viewResult, onComplete, onBack, journeys, profile }: ProtocolPlayerProps) {
   const [step, setStep] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, any>>({});
+  const [answers, setAnswers] = useState<Record<string, any>>(() => {
+    if (targetPerson) {
+      const role = (targetPerson.role || '').toLowerCase();
+      const name = targetPerson.name || '';
+      const lowerName = name.toLowerCase();
+
+      let possessive = name;
+      if (role === 'mae' || lowerName === 'mãe' || lowerName === 'mae') {
+        possessive = 'minha mãe';
+      } else if (role === 'pai' || lowerName === 'pai') {
+        possessive = 'meu pai';
+      } else if (role === 'ancestral') {
+        possessive = (name && name !== 'Ancestral da Linhagem' && name !== 'Ancestral Mapeado') ? name : 'meu ancestral';
+      } else if (role === 'credor') {
+        possessive = (name && name !== 'Credor Moral') ? name : 'meu credor moral';
+      } else if (role === 'parceiro') {
+        possessive = (name && name !== 'Parceiro(a) / Ex-Parceiro(a)') ? name : 'meu/minha parceiro(a)';
+      } else if (lowerName.includes('avó') || lowerName.includes('avoa')) {
+        possessive = lowerName.startsWith('minha') ? name : `minha ${name}`;
+      } else if (lowerName.includes('avô') || lowerName.includes('avo')) {
+        possessive = lowerName.startsWith('meu') ? name : `meu ${name}`;
+      } else if (lowerName.includes('tio')) {
+        possessive = lowerName.startsWith('meu') ? name : `meu ${name}`;
+      } else if (lowerName.includes('tia')) {
+        possessive = lowerName.startsWith('minha') ? name : `minha ${name}`;
+      } else if (lowerName.includes('irmão') || lowerName.includes('irmao')) {
+        possessive = lowerName.startsWith('meu') ? name : `meu ${name}`;
+      } else if (lowerName.includes('irmã') || lowerName.includes('irma')) {
+        possessive = lowerName.startsWith('minha') ? name : `minha ${name}`;
+      }
+
+      return {
+        targetPersonName: targetPerson.name,
+        targetPersonRole: targetPerson.role,
+        targetPersonRoleLabel: targetPerson.roleLabel,
+        targetPersonContract: targetPerson.contractStatement,
+        envolved: possessive,
+        person_link: possessive,
+        resentment_target: possessive,
+        e2_quem_viveu: possessive,
+        e2_quem_pagou: possessive,
+        e2_quem_nao_afasta: possessive,
+        e2_quem_excessivo: possessive,
+        e2_quem_fez_sentir: possessive,
+        e1_pessoa: possessive,
+        e1_contrato: targetPerson.contractStatement || ''
+      };
+    }
+    return {};
+  });
   const [saving, setSaving] = useState(false);
   const [loadingDraft, setLoadingDraft] = useState(true);
   const debounceTimerRef = React.useRef<NodeJS.Timeout | null>(null);
@@ -3043,15 +3103,173 @@ export function ProtocolPlayer({ userId, journeyId, protocol, viewResult, onComp
     }
   };
 
+  const getActiveTargetPerson = (): TargetPersonInfo | null => {
+    if (targetPerson && targetPerson.name) return targetPerson;
+
+    const activeJourney = journeys?.find(j => j.id === journeyId);
+    if (!activeJourney) return targetPerson || null;
+
+    const jPerson = activeJourney.targetPerson || activeJourney.mabiAnswers?.targetPerson || activeJourney.context?.targetPerson;
+    if (jPerson && jPerson.name) {
+      return {
+        name: jPerson.name,
+        role: jPerson.role || 'ancestral',
+        roleLabel: jPerson.roleLabel,
+        activeGuilt: jPerson.activeGuilt || activeJourney.context?.activeGuilt,
+        activeFear: jPerson.activeFear || activeJourney.context?.activeFear,
+        contractStatement: jPerson.contractStatement || activeJourney.context?.contractStatement || activeJourney.mabiAnswers?.passo3?.contractStatement
+      };
+    }
+
+    if (activeJourney.mabiAnswers?.passo1?.ancestorName) {
+      return {
+        name: activeJourney.mabiAnswers.passo1.ancestorName,
+        role: activeJourney.mabiAnswers.passo1.ancestorRole || 'ancestral',
+        contractStatement: activeJourney.mabiAnswers.passo3?.contractStatement || activeJourney.mabiAnswers.passo2?.fearStatement || activeJourney.context?.contractStatement
+      };
+    }
+
+    if (activeJourney.context?.ancestorName) {
+      return {
+        name: activeJourney.context.ancestorName,
+        role: activeJourney.context.ancestorRole || 'ancestral',
+        contractStatement: activeJourney.context.contractStatement
+      };
+    }
+
+    return targetPerson || null;
+  };
+
+  const applyTargetPersonPersonalization = (steps: any[], person: TargetPersonInfo | null | undefined) => {
+    const activePerson = person || getActiveTargetPerson();
+    if (!activePerson || !activePerson.name) return steps;
+
+    const role = (activePerson.role || '').toLowerCase();
+    const name = activePerson.name || '';
+    const lowerName = name.toLowerCase();
+
+    const isFeminine = role === 'mae' || lowerName === 'mãe' || lowerName === 'mae' || lowerName.includes('avó') || lowerName.includes('avoa') || lowerName.includes('tia') || lowerName.includes('irmã') || lowerName.includes('irma');
+
+    let possessive = name;
+    if (role === 'mae' || lowerName === 'mãe' || lowerName === 'mae') {
+      possessive = 'minha mãe';
+    } else if (role === 'pai' || lowerName === 'pai') {
+      possessive = 'meu pai';
+    } else if (role === 'ancestral') {
+      possessive = (name && name !== 'Ancestral da Linhagem' && name !== 'Ancestral Mapeado') ? name : 'meu ancestral';
+    } else if (role === 'credor') {
+      possessive = (name && name !== 'Credor Moral') ? name : 'meu credor moral';
+    } else if (role === 'parceiro') {
+      possessive = (name && name !== 'Parceiro(a) / Ex-Parceiro(a)') ? name : 'meu/minha parceiro(a)';
+    } else if (lowerName.includes('avó') || lowerName.includes('avoa')) {
+      possessive = lowerName.startsWith('minha') ? name : `minha ${name}`;
+    } else if (lowerName.includes('avô') || lowerName.includes('avo')) {
+      possessive = lowerName.startsWith('meu') ? name : `meu ${name}`;
+    } else if (lowerName.includes('tio')) {
+      possessive = lowerName.startsWith('meu') ? name : `meu ${name}`;
+    } else if (lowerName.includes('tia')) {
+      possessive = lowerName.startsWith('minha') ? name : `minha ${name}`;
+    } else if (lowerName.includes('irmão') || lowerName.includes('irmao')) {
+      possessive = lowerName.startsWith('meu') ? name : `meu ${name}`;
+    } else if (lowerName.includes('irmã') || lowerName.includes('irma')) {
+      possessive = lowerName.startsWith('minha') ? name : `minha ${name}`;
+    }
+
+    const singularPronoun = isFeminine ? 'ela' : 'ele';
+    const singularOf = isFeminine ? 'dela' : 'dele';
+    const singularWith = isFeminine ? 'com ela' : 'com ele';
+    const singularFor = isFeminine ? 'para ela' : 'para ele';
+    const singularBy = isFeminine ? 'por ela' : 'por ele';
+
+    const replaceInString = (str: string): string => {
+      if (!str || typeof str !== 'string') return str;
+
+      return str
+        .replace(/que meu sistema não viveu/gi, `que ${possessive} não viveu`)
+        .replace(/que o sistema não viveu/gi, `que ${possessive} não viveu`)
+        .replace(/que seu sistema não viveu/gi, `que ${possessive} não viveu`)
+        .replace(/\[escreva aqui\]/gi, possessive)
+        .replace(/minha mãe \/ meu pai/gi, possessive)
+        .replace(/meu pai \/ minha mãe/gi, possessive)
+        .replace(/minha mãe\/pai/gi, possessive)
+        .replace(/meu pai\/mãe/gi, possessive)
+        .replace(/mãe\/pai/gi, possessive)
+        .replace(/pai\/mãe/gi, possessive)
+        .replace(/dessa pessoa/gi, `de ${possessive}`)
+        .replace(/da pessoa/gi, `de ${possessive}`)
+        .replace(/para essa pessoa/gi, `para ${possessive}`)
+        .replace(/para a pessoa/gi, `para ${possessive}`)
+        .replace(/com essa pessoa/gi, `com ${possessive}`)
+        .replace(/com a pessoa/gi, `com ${possessive}`)
+        .replace(/sobre essa pessoa/gi, `sobre ${possessive}`)
+        .replace(/sobre a pessoa/gi, `sobre ${possessive}`)
+        .replace(/por essa pessoa/gi, `por ${possessive}`)
+        .replace(/por a pessoa/gi, `por ${possessive}`)
+        .replace(/essa pessoa/gi, name || possessive)
+        .replace(/a pessoa/gi, possessive)
+        .replace(/meu sistema/gi, possessive)
+        .replace(/o sistema/gi, possessive)
+        .replace(/meu clã familiar/gi, possessive)
+        .replace(/meu clã/gi, possessive)
+        .replace(/mapa familiar/gi, `mapa (${possessive})`)
+        .replace(/minha família/gi, `minha história com ${possessive}`)
+        .replace(/do ancestral/gi, `de ${possessive}`)
+        .replace(/ao ancestral/gi, `a ${possessive}`)
+        .replace(/com o ancestral/gi, `com ${possessive}`)
+        .replace(/o ancestral/gi, name || possessive)
+        .replace(/meus pais que/gi, `${possessive} que`)
+        .replace(/meus pais/gi, possessive)
+        .replace(/para eles/gi, singularFor)
+        .replace(/com eles/gi, singularWith)
+        .replace(/por eles/gi, singularBy)
+        .replace(/do que eles/gi, `do que ${singularPronoun}`)
+        .replace(/deles/gi, singularOf)
+        .replace(/eles viveram/gi, `${singularPronoun} viveu`)
+        .replace(/eles sofreram/gi, `${singularPronoun} sofreu`);
+    };
+
+    return steps.map(stepObj => {
+      const newStep = { ...stepObj };
+      if (newStep.title) newStep.title = replaceInString(newStep.title);
+      if (newStep.description) newStep.description = replaceInString(newStep.description);
+
+      if (Array.isArray(newStep.fields)) {
+        newStep.fields = newStep.fields.map((field: any) => {
+          const newField = { ...field };
+          if (newField.label) newField.label = replaceInString(newField.label);
+          if (['envolved', 'person_link', 'resentment_target', 'e2_quem_viveu', 'e1_pessoa'].includes(field.id)) {
+            newField.label = `Pessoa Mapeada no Espelho / Quadrante (${possessive}):`;
+            newField.placeholder = `Confirmado no seu mapa: ${possessive}`;
+          }
+          if (newField.placeholder) {
+            newField.placeholder = replaceInString(newField.placeholder);
+            if (activePerson.contractStatement && (field.id === 'e3_ameaca_palavras' || field.id === 'e1_o_que_aconteceu' || field.id === 'e1_contrato')) {
+              newField.placeholder = `Aliança Mapeada: "${activePerson.contractStatement}" — Descreva como se manifesta na sua vida...`;
+            }
+          }
+          if (Array.isArray(newField.options)) {
+            newField.options = newField.options.map((opt: any) => ({
+              ...opt,
+              label: replaceInString(opt.label)
+            }));
+          }
+          return newField;
+        });
+      }
+      return newStep;
+    });
+  };
+
   const getModifiedSteps = () => {
     const original = getProtocolSteps();
+    const personalized = applyTargetPersonPersonalization(original, targetPerson);
     const isMainProtocol = ['culpa_sobrevivente', 'culpa_separacao', 'culpa_responsabilidade', 'culpa_auto_odio'].includes(protocol.id);
-    if (!isMainProtocol) return original;
+    if (!isMainProtocol) return personalized;
 
     const resultSteps: any[] = [];
-    for (let i = 0; i < original.length; i++) {
-      resultSteps.push(original[i]);
-      if (original[i].title.toLowerCase().includes('regra invisível')) {
+    for (let i = 0; i < personalized.length; i++) {
+      resultSteps.push(personalized[i]);
+      if (personalized[i].title.toLowerCase().includes('regra invisível')) {
         resultSteps.push({
           type: 'mapa_corporal',
           title: 'Etapa 3.5 — Mapa Corporal Fatiado com Timer',
@@ -3115,7 +3333,11 @@ export function ProtocolPlayer({ userId, journeyId, protocol, viewResult, onComp
 
   const getFraseAudioText = () => {
     const activeJourney = journeys?.find(j => j.id === journeyId);
-    const ancestorName = activeJourney?.mabiAnswers?.passo1?.ancestorName || answers.e2_quem_pagou || answers.e2_quem_nao_afasta || answers.e2_quem_excessivo || 'meu clã familiar';
+    let targetName = targetPerson?.name;
+    if (targetPerson?.role === 'mae' && (!targetName || targetName === 'Mãe')) targetName = 'minha mãe';
+    if (targetPerson?.role === 'pai' && (!targetName || targetName === 'Pai')) targetName = 'meu pai';
+
+    const ancestorName = targetName || activeJourney?.mabiAnswers?.passo1?.ancestorName || answers.e2_quem_pagou || answers.e2_quem_nao_afasta || answers.e2_quem_excessivo || 'meu clã familiar';
 
     if (protocol.id === 'culpa_sobrevivente') {
       return `O sofrimento de ${ancestorName} pertence à história de ${ancestorName}. Eu não preciso repetir isso para continuar pertencendo. O que é meu agora é seguir com leveza.`;
@@ -3128,7 +3350,7 @@ export function ProtocolPlayer({ userId, journeyId, protocol, viewResult, onComp
     }
     if (protocol.id === 'culpa_auto_odio') {
       const treatedRes = answers.e2_como_acontecia || answers.e2_errado_ambiente || 'minha história';
-      const moldadoPor = answers.e2_quem_fez_sentir || 'outros';
+      const moldadoPor = answers.e2_quem_fez_sentir || ancestorName || 'outros';
       return `O modo como eu fui tratado em ${treatedRes} não define quem eu sou. O que aprendi a odiar em mim foi moldado por ${moldadoPor}. Me punir não corrige.`;
     }
     return '';
@@ -3199,6 +3421,29 @@ export function ProtocolPlayer({ userId, journeyId, protocol, viewResult, onComp
           Passo {step + 1} de {protocolSteps.length}
         </div>
       </div>
+
+      {targetPerson && (
+        <div className="bg-gradient-to-r from-gold/20 via-gold/10 to-transparent border border-gold/30 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-8">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-gold/10 text-gold rounded-xl border border-gold/20 shrink-0">
+              <Zap className="w-5 h-5 fill-gold" />
+            </div>
+            <div>
+              <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-gold block">
+                Protocolo Direcionado ao Mapa
+              </span>
+              <h4 className="text-sm font-serif font-bold text-white">
+                Alvo Sistêmico: <span className="text-gold">{targetPerson.name}</span> ({targetPerson.roleLabel || targetPerson.role})
+              </h4>
+            </div>
+          </div>
+          {targetPerson.contractStatement && (
+            <p className="text-[11px] text-white/60 italic max-w-md">
+              "{targetPerson.contractStatement}"
+            </p>
+          )}
+        </div>
+      )}
 
       <AnimatePresence mode="wait">
         <motion.div
