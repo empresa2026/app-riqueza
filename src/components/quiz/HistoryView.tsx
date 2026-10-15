@@ -1,6 +1,24 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Play, FileText, Loader2, ExternalLink, LayoutGrid, Trash2, X, Trophy, CornerDownRight } from 'lucide-react';
+import { 
+  ArrowLeft, 
+  Play, 
+  FileText, 
+  Loader2, 
+  ExternalLink, 
+  LayoutGrid, 
+  Trash2, 
+  X, 
+  Trophy, 
+  CornerDownRight,
+  Eye,
+  Download,
+  Copy,
+  Check,
+  ShieldCheck,
+  Activity,
+  Heart
+} from 'lucide-react';
 import { Journey, Quiz, UserResult, MatrixResult, Matrix, EnjoymentPlanResult, ProtocolResult, Protocol } from '../../types';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
@@ -9,6 +27,19 @@ import { MATRICES } from '../../data/matrices';
 import { PROTOCOLS } from '../../data/protocols';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
 import { SUBLEIS_SACRIFICIO, SUBLEIS_INJUSTICA, SUBLEIS_DOR, SUBLEIS_RENUNCIA, resolveSubLawTexts } from '../plan/EnjoymentPlanFlow';
+import { 
+  formatProtocolResultForExport, 
+  formatMatrixResultForExport, 
+  formatQuizResultForExport, 
+  downloadTextFile 
+} from '../../utils/protocolExport';
+import { 
+  TargetPersonInfo, 
+  BODY_PARTS, 
+  getProtocolStepsForId, 
+  applyTargetPersonPersonalization,
+  ProtocolStep 
+} from '../../data/protocolSteps';
 
 interface HistoryViewProps {
   history: UserResult[];
@@ -98,6 +129,8 @@ export function HistoryView({
   const [savingId, setSavingId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [viewingPlan, setViewingPlan] = useState<EnjoymentPlanResult | null>(null);
+  const [viewingProtocol, setViewingProtocol] = useState<ProtocolResult | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const activeJourney = journeys.find(j => j.id === activeJourneyId);
 
@@ -117,48 +150,56 @@ export function HistoryView({
     ? planHistory.filter(h => h.journeyId === activeJourneyId || h.journeyId === null || !h.journeyId)
     : planHistory;
 
-  const downloadTxt = (title: string, content: string) => {
-    const element = document.createElement('a');
-    const file = new Blob([content], { type: 'text/plain' });
-    element.href = URL.createObjectURL(file);
-    element.download = `${title}.txt`;
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
+  const resolveTargetPersonForResult = (result: ProtocolResult): TargetPersonInfo | null => {
+    const journey = journeys.find(j => j.id === result.journeyId) || activeJourney;
+    if (journey) {
+      const jPerson = (journey as any).targetPerson || (journey as any).mabiAnswers?.targetPerson || (journey as any).context?.targetPerson;
+      if (jPerson?.name) {
+        return {
+          name: jPerson.name,
+          role: jPerson.role || 'ancestral',
+          roleLabel: jPerson.roleLabel,
+          contractStatement: jPerson.contractStatement || (journey as any).context?.contractStatement
+        };
+      }
+      if ((journey as any).mabiAnswers?.passo1?.ancestorName) {
+        return {
+          name: (journey as any).mabiAnswers.passo1.ancestorName,
+          role: (journey as any).mabiAnswers.passo1.ancestorRole || 'ancestral',
+          contractStatement: (journey as any).mabiAnswers.passo3?.contractStatement || (journey as any).context?.contractStatement
+        };
+      }
+      if ((journey as any).context?.ancestorName) {
+        return {
+          name: (journey as any).context.ancestorName,
+          role: (journey as any).context.ancestorRole || 'ancestral',
+          contractStatement: (journey as any).context.contractStatement
+        };
+      }
+    }
+
+    if (result.answers?.targetPersonName) {
+      return {
+        name: result.answers.targetPersonName,
+        role: result.answers.targetPersonRole || 'ancestral',
+        contractStatement: result.answers.targetPersonContract
+      };
+    }
+
+    return null;
   };
-
-
 
   const handleSaveToDocs = async (result: UserResult, quiz: Quiz) => {
     setSavingId(result.id);
     try {
-      let content = `Protocolo: ${quiz.title}\n`;
-      content += `Data: ${new Date(result.completedAt).toLocaleString('pt-BR')}\n\n`;
-      
-      content += `ESTRUTURA IDENTIFICADA\n`;
-      content += `Ferida: ${quiz.identifiedStructure.ferida}\n`;
-      content += `Domínio: ${quiz.identifiedStructure.dominio}\n`;
-      content += `Máscara: ${quiz.identifiedStructure.mascara}\n`;
-      content += `Modo: ${quiz.identifiedStructure.modo}\n\n`;
-      
-      content += `RESPOSTAS\n`;
-      quiz.sections.forEach((section, sIdx) => {
-        content += `\n[ ${section.title} ]\n`;
-        section.questions.forEach((q, qIdx) => {
-          const answerIdx = result.answers[`${sIdx}-${qIdx}`];
-          const answer = answerIdx !== undefined ? q.options[answerIdx] : 'Não respondida';
-          content += `P: ${q.question}\nR: ${answer}\n\n`;
-        });
-      });
-
-      content += `\nORAÇÃO FINAL\n${quiz.finalPrayer}\n`;
+      const content = formatQuizResultForExport(quiz, result);
 
       try {
         const docUrl = await createGoogleDoc(`Protocolo - ${quiz.title}`, content);
         window.open(docUrl, '_blank');
       } catch (docErr) {
         console.warn('Google Docs failed, falling back to TXT download', docErr);
-        downloadTxt(`Protocolo - ${quiz.title}`, content);
+        downloadTextFile(`Protocolo - ${quiz.title}`, content);
       }
     } catch (error) {
       alert(error instanceof Error ? error.message : 'Erro ao processar exportação');
@@ -173,21 +214,14 @@ export function HistoryView({
     
     setSavingId(result.id);
     try {
-      let content = `Checkpoint de Investigação: ${matrix.title}\n`;
-      content += `Autor: ${matrix.author}\n`;
-      content += `Data: ${new Date(result.completedAt).toLocaleString('pt-BR')}\n\n`;
-      
-      content += `INVESTIGAÇÃO\n`;
-      Object.entries(result.answers).forEach(([label, answer]) => {
-        content += `${label}\n${answer}\n\n`;
-      });
+      const content = formatMatrixResultForExport(matrix, result);
 
       try {
         const docUrl = await createGoogleDoc(`Checkpoint - ${matrix.title}`, content);
         window.open(docUrl, '_blank');
       } catch (docErr) {
         console.warn('Google Docs failed, falling back to TXT download', docErr);
-        downloadTxt(`Checkpoint - ${matrix.title}`, content);
+        downloadTextFile(`Checkpoint - ${matrix.title}`, content);
       }
     } catch (error) {
       alert(error instanceof Error ? error.message : 'Erro ao processar exportação');
@@ -195,6 +229,7 @@ export function HistoryView({
       setSavingId(null);
     }
   };
+
 
   const handleSavePlanToDocs = async (result: EnjoymentPlanResult) => {
     setSavingId(result.id);
@@ -319,7 +354,7 @@ export function HistoryView({
         window.open(docUrl, '_blank');
       } catch (docErr) {
         console.warn('Google Docs failed, falling back to TXT download', docErr);
-        downloadTxt(`Mapa das Alianças Familiares`, content);
+        downloadTextFile(`Mapa das Alianças Familiares`, content);
       }
     } catch (error) {
       alert(error instanceof Error ? error.message : 'Erro ao processar exportação');
@@ -334,28 +369,23 @@ export function HistoryView({
       const protocol = PROTOCOLS.find(p => p.id === result.protocolId);
       if (!protocol) return;
 
-      let content = `PROTOCOLO: ${protocol.title}\n`;
-      content += `Código: ${protocol.code}\n`;
-      content += `Data: ${new Date(result.completedAt).toLocaleString('pt-BR')}\n\n`;
-      content += `Frase: "${protocol.quote}"\n\n`;
-
-      Object.entries(result.answers).forEach(([key, value]) => {
-        const formattedValue = Array.isArray(value) ? value.join(', ') : value;
-        content += `${key.toUpperCase()}: ${formattedValue}\n`;
-      });
+      const targetPerson = resolveTargetPersonForResult(result);
+      const content = formatProtocolResultForExport(protocol, result, targetPerson);
 
       try {
         const docUrl = await createGoogleDoc(`Protocolo - ${protocol.title}`, content);
         window.open(docUrl, '_blank');
       } catch (docErr) {
-        downloadTxt(`Protocolo - ${protocol.title}`, content);
+        console.warn('Google Docs failed, falling back to TXT download', docErr);
+        downloadTextFile(`Protocolo - ${protocol.title}`, content);
       }
     } catch (error) {
-       alert('Erro ao exportar protocolo');
+       alert(error instanceof Error ? error.message : 'Erro ao exportar protocolo');
     } finally {
       setSavingId(null);
     }
   };
+
 
   return (
     <motion.div 
@@ -582,14 +612,23 @@ export function HistoryView({
                   </p>
                 </div>
                 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setViewingProtocol(result)}
+                    className="flex items-center gap-1.5 border-white/10 hover:bg-white/5 text-xs px-3 py-2"
+                  >
+                    <Eye className="w-3.5 h-3.5 text-gold" />
+                    Visualizar
+                  </Button>
+
                   {onSelectProtocol && (
                     <Button 
                       variant="outline" 
                       onClick={() => onSelectProtocol(protocol, result)}
-                      className="flex items-center gap-2 border-white/5 hover:bg-white/5"
+                      className="flex items-center gap-1.5 border-white/5 hover:bg-white/5 text-xs px-3 py-2"
                     >
-                      <Play className="w-4 h-4" />
+                      <Play className="w-3.5 h-3.5" />
                       Abrir
                     </Button>
                   )}
@@ -598,12 +637,12 @@ export function HistoryView({
                     variant="outline" 
                     onClick={() => handleSaveProtocolToDocs(result)}
                     disabled={savingId === result.id}
-                    className="flex items-center gap-2 border-gold/20 text-gold hover:bg-gold hover:text-black"
+                    className="flex items-center gap-1.5 border-gold/20 text-gold hover:bg-gold hover:text-black text-xs px-3 py-2"
                   >
                     {savingId === result.id ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
                     ) : (
-                      <FileText className="w-4 h-4" />
+                      <FileText className="w-3.5 h-3.5" />
                     )}
                     Exportar
                   </Button>
@@ -994,6 +1033,265 @@ export function HistoryView({
           </motion.div>
         </div>
       )}
+
+      {/* Protocol Result Viewer Modal */}
+      {viewingProtocol && (() => {
+        const protocol = PROTOCOLS.find(p => p.id === viewingProtocol.protocolId);
+        if (!protocol) return null;
+
+        const targetPerson = resolveTargetPersonForResult(viewingProtocol);
+        const rawSteps = getProtocolStepsForId(protocol.id, protocol.title);
+        const steps = applyTargetPersonPersonalization(rawSteps, targetPerson);
+        const answers = viewingProtocol.answers || {};
+
+        const fullExportContent = formatProtocolResultForExport(protocol, viewingProtocol, targetPerson);
+
+        const handleCopyText = async () => {
+          try {
+            await navigator.clipboard.writeText(fullExportContent);
+            setCopiedId(viewingProtocol.id);
+            setTimeout(() => setCopiedId(null), 2500);
+          } catch (e) {
+            console.error('Failed to copy', e);
+          }
+        };
+
+        const handleDownloadTxt = () => {
+          downloadTextFile(`Protocolo - ${protocol.title}`, fullExportContent);
+        };
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-luxury-black border border-white/10 rounded-3xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl shadow-gold/5"
+            >
+              {/* Header */}
+              <div className="bg-luxury-black/95 backdrop-blur-md p-6 border-b border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0">
+                <div>
+                  <div className="text-[10px] uppercase font-bold text-gold tracking-widest mb-1 flex items-center gap-2">
+                    <span>{protocol.code}</span>
+                    <span className="text-white/20">•</span>
+                    <span className="text-white/40">{new Date(viewingProtocol.completedAt).toLocaleString('pt-BR')}</span>
+                  </div>
+                  <h3 className="text-2xl font-serif text-white">{protocol.title}</h3>
+                </div>
+
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Button
+                    variant="outline"
+                    onClick={handleCopyText}
+                    className="border-white/10 hover:bg-white/5 text-xs py-1.5 px-3 flex items-center gap-1.5 text-white/80"
+                  >
+                    {copiedId === viewingProtocol.id ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-emerald-400" />
+                        <span className="text-emerald-400">Copiado!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5" />
+                        Copiar
+                      </>
+                    )}
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    onClick={handleDownloadTxt}
+                    className="border-white/10 hover:bg-white/5 text-xs py-1.5 px-3 flex items-center gap-1.5 text-white/80"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    Baixar TXT
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    onClick={() => handleSaveProtocolToDocs(viewingProtocol)}
+                    disabled={savingId === viewingProtocol.id}
+                    className="border-gold/30 hover:bg-gold/10 text-gold text-xs py-1.5 px-3 flex items-center gap-1.5"
+                  >
+                    {savingId === viewingProtocol.id ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <FileText className="w-3.5 h-3.5" />
+                    )}
+                    Google Docs
+                  </Button>
+
+                  <button 
+                    onClick={() => setViewingProtocol(null)}
+                    className="p-2 hover:bg-white/5 rounded-full text-white/40 hover:text-white transition-colors ml-1"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Scrollable Body */}
+              <div className="p-6 sm:p-8 space-y-8 overflow-y-auto custom-scrollbar flex-1">
+                {/* Protocol Quote and Info */}
+                <div className="p-5 rounded-2xl bg-gold/5 border border-gold/15 space-y-2">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-gold/70 block">Frase-Âncora do Protocolo</span>
+                  <p className="text-sm font-serif italic text-gold/90 leading-relaxed">
+                    "{protocol.quote}"
+                  </p>
+                </div>
+
+                {targetPerson && (
+                  <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/10 flex items-center justify-between gap-4">
+                    <div>
+                      <span className="text-[10px] uppercase font-bold tracking-widest text-white/40 block">Alvo Sistêmico Mapeado</span>
+                      <h4 className="text-base font-serif font-bold text-white mt-0.5">
+                        {targetPerson.name} <span className="text-xs text-gold/70 font-normal">({targetPerson.roleLabel || targetPerson.role})</span>
+                      </h4>
+                    </div>
+                    {targetPerson.contractStatement && (
+                      <p className="text-xs text-white/60 italic max-w-md text-right">
+                        "{targetPerson.contractStatement}"
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Steps and Question-Answer pairs */}
+                <div className="space-y-6">
+                  {steps.map((stepItem: ProtocolStep, sIdx: number) => {
+                    const fields = stepItem.fields || [];
+                    const answered = fields.filter((f) => {
+                      const v = answers[f.id];
+                      return v !== undefined && v !== null && v !== '' && !(Array.isArray(v) && v.length === 0);
+                    });
+
+                    if (answered.length === 0) return null;
+
+                    return (
+                      <div key={sIdx} className="p-6 bg-white/[0.02] border border-white/5 rounded-2xl space-y-4">
+                        <div className="border-b border-white/10 pb-3">
+                          <h4 className="text-base font-serif font-bold text-gold">{stepItem.title || `Etapa ${sIdx + 1}`}</h4>
+                          {stepItem.description && (
+                            <p className="text-xs text-white/50 mt-1">{stepItem.description}</p>
+                          )}
+                        </div>
+
+                        <div className="space-y-4 pt-1">
+                          {answered.map((field) => {
+                            const rawVal = answers[field.id];
+                            let displayVal = '';
+                            if (Array.isArray(rawVal)) {
+                              displayVal = rawVal.map((v) => {
+                                const opt = field.options?.find((o) => o.value === v);
+                                return opt ? opt.label : String(v);
+                              }).join(', ');
+                            } else if (typeof rawVal === 'boolean') {
+                              displayVal = rawVal ? 'Sim / Concluído' : 'Não';
+                            } else if (field.options && typeof rawVal === 'string') {
+                              const opt = field.options.find((o) => o.value === rawVal);
+                              displayVal = opt ? opt.label : rawVal;
+                            } else {
+                              displayVal = String(rawVal);
+                            }
+
+                            return (
+                              <div key={field.id} className="space-y-1.5 bg-black/30 p-3.5 rounded-xl border border-white/5">
+                                <span className="text-xs font-semibold text-white/80 block leading-snug">
+                                  {field.label || field.id}
+                                </span>
+                                <p className="text-sm text-gold/90 whitespace-pre-wrap leading-relaxed pl-2 border-l-2 border-gold/40">
+                                  {displayVal}
+                                </p>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {/* Somatic Block */}
+                  {(answers.local_tensao_mapa || answers.sensacao_pos_mao || answers.texto_mudanca_corpo) && (
+                    <div className="p-6 bg-gold/[0.02] border border-gold/15 rounded-2xl space-y-4">
+                      <div className="border-b border-gold/15 pb-3 flex items-center gap-2">
+                        <Activity className="w-4 h-4 text-gold" />
+                        <h4 className="text-base font-serif font-bold text-gold">Consciência Corporal & Liberação Somática</h4>
+                      </div>
+
+                      <div className="grid sm:grid-cols-2 gap-4">
+                        {answers.local_tensao_mapa && (
+                          <div className="bg-black/30 p-3.5 rounded-xl border border-white/5 space-y-1">
+                            <span className="text-[10px] uppercase font-bold text-white/40 tracking-wider block">Ponto de Tensão</span>
+                            <p className="text-sm text-white font-medium">
+                              {BODY_PARTS.find((p) => p.id === answers.local_tensao_mapa)?.label || answers.local_tensao_mapa}
+                            </p>
+                          </div>
+                        )}
+
+                        {answers.sensacao_pos_mao && (
+                          <div className="bg-black/30 p-3.5 rounded-xl border border-white/5 space-y-1">
+                            <span className="text-[10px] uppercase font-bold text-white/40 tracking-wider block">Sensação Pós-Toque</span>
+                            <p className="text-sm text-white font-medium">
+                              {Array.isArray(answers.sensacao_pos_mao) ? answers.sensacao_pos_mao.join(', ') : answers.sensacao_pos_mao}
+                            </p>
+                          </div>
+                        )}
+
+                        {answers.texto_mudanca_corpo && (
+                          <div className="sm:col-span-2 bg-black/30 p-3.5 rounded-xl border border-white/5 space-y-1">
+                            <span className="text-[10px] uppercase font-bold text-white/40 tracking-wider block">Mudança no Corpo com a Frase de Liberação</span>
+                            <p className="text-sm text-gold/90 whitespace-pre-wrap leading-relaxed italic">
+                              "{answers.texto_mudanca_corpo}"
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Action Block */}
+                  {(answers.check_usuario_feito !== undefined || answers.leveza_pos_ato !== undefined || answers.observacao_pos_ato) && (
+                    <div className="p-6 bg-white/[0.02] border border-white/5 rounded-2xl space-y-4">
+                      <div className="border-b border-white/10 pb-3 flex items-center gap-2">
+                        <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                        <h4 className="text-base font-serif font-bold text-white">Ato de Concretização & Integração</h4>
+                      </div>
+
+                      <div className="grid sm:grid-cols-2 gap-4">
+                        {answers.check_usuario_feito !== undefined && (
+                          <div className="bg-black/30 p-3.5 rounded-xl border border-white/5 space-y-1">
+                            <span className="text-[10px] uppercase font-bold text-white/40 tracking-wider block">Status da Ação</span>
+                            <p className="text-sm text-emerald-400 font-medium">
+                              ✓ Realizado {typeof answers.check_usuario_feito === 'string' ? `em ${new Date(answers.check_usuario_feito).toLocaleDateString('pt-BR')}` : ''}
+                            </p>
+                          </div>
+                        )}
+
+                        {answers.leveza_pos_ato !== undefined && answers.leveza_pos_ato !== null && (
+                          <div className="bg-black/30 p-3.5 rounded-xl border border-white/5 space-y-1">
+                            <span className="text-[10px] uppercase font-bold text-white/40 tracking-wider block">Escala de Alívio / Leveza</span>
+                            <p className="text-sm text-gold font-bold">
+                              {answers.leveza_pos_ato} de 5
+                            </p>
+                          </div>
+                        )}
+
+                        {answers.observacao_pos_ato && (
+                          <div className="sm:col-span-2 bg-black/30 p-3.5 rounded-xl border border-white/5 space-y-1">
+                            <span className="text-[10px] uppercase font-bold text-white/40 tracking-wider block">Observações e Registros</span>
+                            <p className="text-sm text-white/80 whitespace-pre-wrap leading-relaxed">
+                              {answers.observacao_pos_ato}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        );
+      })()}
     </motion.div>
   );
 }
