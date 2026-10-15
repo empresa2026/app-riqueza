@@ -43,10 +43,10 @@ export const Fase2Sintomas: React.FC<Fase2SintomasProps> = ({
                   step === 'f2_dor' ? SUBLEIS_DOR : SUBLEIS_RENUNCIA;
 
   const titles = {
-    f2_sacrificio: "1. A LEI DO SACRIFÍCIO",
-    f2_injustica: "2. A LEI DA INJUSTIÇA",
-    f2_dor: "3. A LEI DA DOR",
-    f2_renuncia: "4. A LEI DA RENÚNCIA"
+    f2_sacrificio: "1. PADRÃO DE SACRIFÍCIO",
+    f2_injustica: "2. PADRÃO DE PERDA",
+    f2_dor: "3. PADRÃO DE DOR",
+    f2_renuncia: "4. PADRÃO DE RENÚNCIA"
   };
 
   return (
@@ -71,7 +71,7 @@ export const Fase2Sintomas: React.FC<Fase2SintomasProps> = ({
 
       {/* Instruction */}
       <p className="text-xs text-white/60 leading-relaxed bg-white/[0.02] border border-white/5 p-4 rounded-xl">
-        Marque os sintomas ou subleis invisíveis que o seu corpo/vida pode estar executando hoje para pagar essa dívida sistêmica.
+        Marque os sinais que o seu corpo e a sua vida podem estar repetindo hoje para pagar essa dívida sistêmica.
       </p>
 
       {/* Symptoms List */}

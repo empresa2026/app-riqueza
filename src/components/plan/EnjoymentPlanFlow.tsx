@@ -40,6 +40,7 @@ import {
 } from '../../data/planConstants';
 export { AREAS, SUBLEIS_SACRIFICIO, SUBLEIS_INJUSTICA, SUBLEIS_DOR, SUBLEIS_RENUNCIA, resolveSubLawTexts };
 import { MabiDiagnosticMatrix, CULPAS_INFO, MEDOS_INFO } from '../journey/MabiDiagnosticMatrix';
+import { PerfilPadroes } from './PerfilPadroes';
 
 interface EnjoymentPlanFlowProps {
   userId: string;
@@ -76,7 +77,7 @@ const MATRIZ_LEIS = {
     CARREIRA: "Proibição sistêmica de ultrapassar quem sofreu."
   },
   injustica: {
-    label: "2. INJUSTIÇA",
+    label: "2. PERDA",
     subLabel: "A Contabilidade Familiar (Desequilíbrio de Justiça)",
     DINHEIRO: "O dinheiro foge para equilibrar o débito geracional.",
     AMOR: "A paz relacional incomoda; conflito é conexão.",
@@ -762,7 +763,7 @@ export function EnjoymentPlanFlow({ userId, journeyId, onComplete, onBack, mode 
                 <div>
                   <h3 className="font-semibold text-white mb-1">Espelho da Realidade (Fase 2)</h3>
                   <p className="text-xs text-white/50 leading-relaxed">
-                    Marque as subleis corporais invisíveis que você executa hoje como um marcador de lealdade solidária.
+                    Marque os sinais corporais que você repete hoje como um marcador de lealdade solidária.
                   </p>
                 </div>
               </Card>
@@ -837,7 +838,7 @@ export function EnjoymentPlanFlow({ userId, journeyId, onComplete, onBack, mode 
                 O ESPELHO DA REALIDADE
               </h1>
               <p className="text-sm md:text-base text-white/60 max-w-2xl mx-auto leading-relaxed">
-                Aqui expomos as subleis inconscientes, travas de vida e comportamentos que o seu corpo executa no dia a dia para permanecer leal aos acordos familiares.
+                Aqui expomos os sinais inconscientes, travas de vida e comportamentos que o seu corpo executa no dia a dia para permanecer leal aos acordos familiares.
               </p>
             </div>
 
@@ -847,7 +848,7 @@ export function EnjoymentPlanFlow({ userId, journeyId, onComplete, onBack, mode 
                   <Activity className="w-5 h-5 text-gold" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-white mb-1">Mapeamento de Padrões e Subleis</h3>
+                  <h3 className="font-semibold text-white mb-1">Mapeamento de Padrões e Sinais</h3>
                   <p className="text-xs text-white/50 leading-relaxed">
                     Marque os sintomas corporais, sensações somáticas e autossabotagens automáticas que travam sua prosperidade, saúde ou amor no presente.
                   </p>
@@ -923,27 +924,31 @@ export function EnjoymentPlanFlow({ userId, journeyId, onComplete, onBack, mode 
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="text-center space-y-6 py-12 max-w-xl mx-auto"
+            className={cn("space-y-6 py-12 mx-auto", mode === 'padroes' ? "max-w-4xl" : "max-w-xl")}
           >
-            <div className="w-16 h-16 bg-gold/10 border-2 border-gold rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
-              <Crown className="w-8 h-8 text-gold" />
+            <div className="text-center space-y-6 max-w-xl mx-auto">
+              <div className="w-16 h-16 bg-gold/10 border-2 border-gold rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
+                <Crown className="w-8 h-8 text-gold" />
+              </div>
+
+              <h2 className="text-3xl font-serif font-medium text-white uppercase tracking-tight">
+                {mode === 'aliancas' && "Alianças Sistêmicas Mapeadas"}
+                {mode === 'padroes' && "Espelho da Realidade Concluído"}
+                {!mode && "Diagnóstico Selado com Sucesso"}
+              </h2>
+              <p className="text-sm text-white/60 leading-relaxed">
+                {mode === 'aliancas' && "O seu histórico de Alianças Invisíveis e débitos herdados foi registrado com sucesso. A consciência destas lealdades é o primeiro passo para a autoria plena. Agora, avance para diagnosticar os padrões somáticos."}
+                {mode === 'padroes' && "Seu diagnóstico foi concluído e salvo. Abaixo está o seu perfil dos 4 padrões. Na intervenção, você trabalha cada pessoa da sua história, começando pelo padrão dominante."}
+                {!mode && "O seu Mapa de Alianças Familiares foi registrado no seu histórico e conectado ao seu plano biológico. A consciência destas lealdades é o primeiro passo para a autoria plena."}
+              </p>
             </div>
 
-            <h2 className="text-3xl font-serif font-medium text-white uppercase tracking-tight">
-              {mode === 'aliancas' && "Alianças Sistêmicas Mapeadas"}
-              {mode === 'padroes' && "Espelho da Realidade Concluído"}
-              {!mode && "Diagnóstico Selado com Sucesso"}
-            </h2>
-            <p className="text-sm text-white/60 leading-relaxed">
-              {mode === 'aliancas' && "O seu histórico de Alianças Invisíveis e débitos herdados foi registrado com sucesso. A consciência destas lealdades é o primeiro passo para a autoria plena. Agora, avance para diagnosticar os padrões somáticos."}
-              {mode === 'padroes' && "Seu diagnóstico de sintomas corporais e subleis ativas foi concluído e salvo. Você expôs com sucesso as amarras do inconsciente. Agora, acesse os protocolos de liberação recomendados."}
-              {!mode && "O seu Mapa de Alianças Familiares foi registrado no seu histórico e conectado ao seu plano biológico. A consciência destas lealdades é o primeiro passo para a autoria plena."}
-            </p>
+            {mode === 'padroes' && <PerfilPadroes sintomas={sintomas} fase1={fase1} />}
 
             <div className="pt-6 flex flex-col sm:flex-row justify-center gap-3">
               <Button onClick={onComplete} className="bg-gold text-black hover:bg-gold/80 font-bold px-6">
                 {mode === 'aliancas' && "Avançar para Padrões"}
-                {mode === 'padroes' && "Acessar Meus Protocolos"}
+                {mode === 'padroes' && "Começar a intervenção"}
                 {!mode && "Voltar à Jornada"}
               </Button>
               <Button variant="ghost" onClick={handleReset} className="text-white/40 hover:text-white">

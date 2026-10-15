@@ -7,6 +7,7 @@ import { MabiDashboardProgress } from '../journey/MabiDashboardProgress';
 import { MabiPersonMap, MabiPerson } from '../journey/MabiPersonMap';
 import { buildMabiAnswersFromPlan } from '../../lib/mabiEngine';
 import { PROTOCOLS } from '../../data/protocols';
+import { PerfilPadroes } from '../plan/PerfilPadroes';
 
 interface MatrixLibraryViewProps {
   onSelect?: (m: any) => void;
@@ -143,12 +144,15 @@ export function MatrixLibraryView({
           />
         ) : (
           mabiJourney ? (
-            <MabiDashboardProgress 
+            <div className="space-y-10">
+            {latestPlan && <PerfilPadroes sintomas={latestPlan.sintomas} fase1={latestPlan.fase1} />}
+            <MabiDashboardProgress
               journey={mabiJourney} 
               protocolHistory={protocolHistory || []} 
               onSelectStaticProtocol={(protoId) => onSelectStaticProtocol && onSelectStaticProtocol(protoId)}
               onGoToChronogram={onGoToChronogram}
             />
+            </div>
           ) : (
             <Card className="p-8 text-center bg-white/[0.01] border-white/5">
               <p className="text-white/40 text-sm leading-relaxed max-w-lg mx-auto">

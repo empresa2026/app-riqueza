@@ -59,7 +59,7 @@ export const PlanDetailsModal: React.FC<PlanDetailsModalProps> = ({
             <div className="grid md:grid-cols-2 gap-4">
               {[
                 { title: '1. SACRIFÍCIO NÃO RECONHECIDO', data: viewingPlanDetail.fase1?.sacrificio },
-                { title: '2. INJUSTIÇA NÃO REPARADA', data: viewingPlanDetail.fase1?.injustica },
+                { title: '2. PERDA NÃO REPARADA', data: viewingPlanDetail.fase1?.injustica },
                 { title: '3. DOR NÃO PROCESSADA', data: viewingPlanDetail.fase1?.dor },
                 { title: '4. RENÚNCIA / EXCLUÍDO', data: viewingPlanDetail.fase1?.renuncia }
               ].map((item, i) => (
@@ -94,12 +94,12 @@ export const PlanDetailsModal: React.FC<PlanDetailsModalProps> = ({
           {/* Fase 2: Diagnóstico de Sintomas & Subleis */}
           <div className="space-y-4 font-sans">
             <h4 className="text-[10px] font-bold uppercase tracking-widest text-gold/60 font-sans">
-              Fase 2: Diagnóstico de Sintomas & Subleis do Espelho da Vida
+              Fase 2: Diagnóstico de Sintomas & Sinais do Espelho da Vida
             </h4>
             <div className="grid md:grid-cols-2 gap-4">
               {[
                 { title: '1. SACRIFÍCIO', items: resolveSubLawTexts(viewingPlanDetail.sintomas?.sacrificio, SUBLEIS_SACRIFICIO) },
-                { title: '2. INJUSTIÇA', items: resolveSubLawTexts(viewingPlanDetail.sintomas?.injustica, SUBLEIS_INJUSTICA) },
+                { title: '2. PERDA', items: resolveSubLawTexts(viewingPlanDetail.sintomas?.injustica, SUBLEIS_INJUSTICA) },
                 { title: '3. DOR', items: resolveSubLawTexts(viewingPlanDetail.sintomas?.dor, SUBLEIS_DOR) },
                 { title: '4. RENÚNCIA', items: resolveSubLawTexts(viewingPlanDetail.sintomas?.renuncia, SUBLEIS_RENUNCIA) }
               ].map((cat, i) => (
@@ -107,7 +107,7 @@ export const PlanDetailsModal: React.FC<PlanDetailsModalProps> = ({
                   <div className="flex items-center justify-between border-b border-white/10 pb-2">
                     <h5 className="font-serif text-gold text-sm font-semibold">{cat.title}</h5>
                     <span className="text-[9px] bg-gold/10 text-gold px-2.5 py-0.5 rounded-full font-bold">
-                      {cat.items.length} subleis ativas
+                      {cat.items.length} sinais marcados
                     </span>
                   </div>
                   {cat.items.length > 0 ? (
@@ -120,7 +120,7 @@ export const PlanDetailsModal: React.FC<PlanDetailsModalProps> = ({
                       ))}
                     </ul>
                   ) : (
-                    <p className="text-xs text-white/30 italic py-1">Nenhuma sublei ativada nesta lei.</p>
+                    <p className="text-xs text-white/30 italic py-1">Nenhum sinal marcado neste padrão.</p>
                   )}
                 </div>
               ))}
@@ -195,7 +195,7 @@ export const PlanDetailsModal: React.FC<PlanDetailsModalProps> = ({
               if (viewingPlanDetail.fase1) {
                 const { sacrificio, injustica, dor, renuncia } = viewingPlanDetail.fase1;
                 if (sacrificio?.familiar) list.push(`${sacrificio.familiar} (Sacrifício)`);
-                if (injustica?.familiar) list.push(`${injustica.familiar} (Injustiça)`);
+                if (injustica?.familiar) list.push(`${injustica.familiar} (Perda)`);
                 if (dor?.familiar) list.push(`${dor.familiar} (Dor)`);
                 if (renuncia?.familiar) list.push(`${renuncia.familiar} (Renúncia)`);
               }
@@ -212,7 +212,7 @@ export const PlanDetailsModal: React.FC<PlanDetailsModalProps> = ({
                 }
                 if (injustica?.familiar && injustica?.fatos) {
                   const areasStr = (injustica.areas || []).length > 0 ? injustica.areas.join('/') : 'minha vida';
-                  contracts.push(`Para compensar a injustiça vivida por ${injustica.familiar}, eu me comprometo a abrir mão da prosperidade no(a) ${areasStr} (${injustica.fatos}).`);
+                  contracts.push(`Para compensar a perda vivida por ${injustica.familiar}, eu me comprometo a abrir mão da prosperidade no(a) ${areasStr} (${injustica.fatos}).`);
                 }
                 if (dor?.familiar && dor?.fatos) {
                   const areasStr = (dor.areas || []).length > 0 ? dor.areas.join('/') : 'minha vida';
